@@ -474,6 +474,38 @@ function updateFirstPersonCamera() {
     // 确保第一人称控制器也跟随
     if (firstPersonControls && firstPersonControls.object) {
       firstPersonControls.object.position.copy(camera.position);
+
+      // 限制第一人称视角的角度范围
+      limitFirstPersonRotation();
+    }
+  }
+}
+
+// 限制第一人称视角的旋转角度
+function limitFirstPersonRotation() {
+  if (!firstPersonControls || !firstPersonControls.object) return;
+
+  // PointerLockControls 的结构：
+  // object = yawObject (水平旋转)
+  // object.children[0] = pitchObject (垂直旋转)
+  const yawObject = firstPersonControls.object;
+  const pitchObject = yawObject.children[0];
+
+  if (yawObject) {
+    // 限制水平旋转范围：-180度到180度（完全自由）
+    // 实际上不需要限制水平旋转，因为宇航员可以转向任何方向
+  }
+
+  if (pitchObject) {
+    // 限制垂直旋转范围：-60度到60度
+    const minPitch = -Math.PI / 3; // -60度
+    const maxPitch = Math.PI / 3; // +60度
+
+    if (pitchObject.rotation.x < minPitch) {
+      pitchObject.rotation.x = minPitch;
+    }
+    if (pitchObject.rotation.x > maxPitch) {
+      pitchObject.rotation.x = maxPitch;
     }
   }
 }
@@ -647,6 +679,7 @@ function createUI() {
     <p>第三人称模式：WASD键移动宇航员（以宇航员朝向为准）</p>
     <p>第一人称模式：WASD键移动相机，鼠标控制视角</p>
     <p>第一人称模式：点击屏幕锁定鼠标，移动鼠标控制视角，ESC解锁</p>
+    <p>第一人称模式：垂直视角限制在±60度范围内</p>
     <p>第三人称模式：跟随宇航员移动，鼠标拖拽旋转视角，滚轮缩放</p>
   `;
 
