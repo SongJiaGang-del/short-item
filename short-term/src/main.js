@@ -5,7 +5,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls.js";
 
 // 场景变量
-let scene, camera, renderer, controls;
+let scene, camera, renderer;
 let astronaut, mixer, clock;
 let isFirstPerson = false;
 let firstPersonControls, thirdPersonControls;
@@ -26,10 +26,6 @@ let joystickActive = false;
 let joystickCenter = { x: 0, y: 0 };
 let joystickPosition = { x: 0, y: 0 };
 let joystickRadius = 50;
-let joystickKnobRadius = 20;
-
-// 全局变量：第一人称初始yaw
-let firstPersonYawCenter = Math.PI;
 
 // 检测是否为移动设备
 function detectMobile() {
@@ -253,8 +249,6 @@ function updateAstronautMovement() {
 
   // 移动端摇杆控制
   if (isMobile && joystickActive) {
-    const sensitivity = 0.02; // 摇杆灵敏度
-
     // 计算摇杆输入值（-1 到 1）
     const inputX = joystickPosition.x / joystickRadius;
     const inputY = -joystickPosition.y / joystickRadius; // 反转Y轴，向上为正
