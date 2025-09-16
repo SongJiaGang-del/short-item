@@ -115,20 +115,135 @@ canvas:active {
   100% { opacity: 1; }
 }
 
-/* 响应式设计 */
+/* 移动端摇杆样式 */
+.joystick-container {
+  position: fixed;
+  z-index: 1000;
+}
+
+.joystick-base {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  backdrop-filter: blur(10px);
+  position: relative;
+  cursor: pointer;
+}
+
+.joystick-knob {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.8);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  transition: all 0.1s ease;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.joystick-knob:active {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+/* 移动端跳跃按钮样式 */
+.mobile-jump-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #FF6B6B, #FF5252);
+  color: white;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  transition: all 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mobile-jump-button:hover {
+  background: linear-gradient(45deg, #FF5252, #FF6B6B);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+.mobile-jump-button:active {
+  background: linear-gradient(45deg, #E53935, #FF5252);
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 10px rgba(255, 107, 107, 0.5);
+}
+
+/* 移动端UI优化 */
 @media (max-width: 768px) {
+  .ui-container {
+    top: 10px;
+    left: 10px;
+  }
+  
   .toggle-button {
-    padding: 10px 20px;
-    font-size: 14px;
+    padding: 8px 16px;
+    font-size: 12px;
   }
   
   .instructions {
-    font-size: 12px;
-    padding: 10px;
+    font-size: 11px;
+    padding: 8px;
+    max-width: 200px;
   }
   
   .first-person-hint {
+    font-size: 12px;
+    padding: 10px 16px;
+  }
+  
+  /* 移动端摇杆调整 */
+  .joystick-base {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .joystick-knob {
+    width: 32px;
+    height: 32px;
+  }
+  
+  /* 移动端跳跃按钮调整 */
+  .mobile-jump-button {
+    width: 70px;
+    height: 70px;
     font-size: 14px;
-    padding: 12px 20px;
+  }
+}
+
+/* 超小屏幕优化 */
+@media (max-width: 480px) {
+  .joystick-base {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .joystick-knob {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .mobile-jump-button {
+    width: 60px;
+    height: 60px;
+    font-size: 12px;
+  }
+  
+  .instructions {
+    font-size: 10px;
+    padding: 6px;
+    max-width: 150px;
   }
 }
