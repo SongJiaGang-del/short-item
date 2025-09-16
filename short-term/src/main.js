@@ -12,6 +12,13 @@ let firstPersonControls, thirdPersonControls;
 let astronautVelocity = new THREE.Vector3();
 let astronautSpeed = 0.03;
 
+// 跳跃相关变量
+let isJumping = false;
+let jumpVelocity = 0;
+let jumpForce = 0.08; // 跳跃力度（稍微减小）
+let gravity = -0.001; // 重力加速度（减小，让下落更慢）
+let groundY = 0; // 地面Y坐标
+
 // 全局变量：第一人称初始yaw
 let firstPersonYawCenter = Math.PI;
 
@@ -177,6 +184,44 @@ function loadAstronaut() {
 }
 
 // 方向标识功能已移除
+
+// 跳跃函数
+function jump() {
+  if (!astronaut || isJumping) return;
+
+  // 检查是否在地面上
+  if (astronaut.position.y <= groundY + 0.1) {
+    isJumping = true;
+    jumpVelocity = jumpForce;
+    console.log("宇航员开始跳跃!");
+  }
+}
+
+// 更新跳跃物理
+function updateJumpPhysics() {
+  if (!astronaut) return;
+
+  if (isJumping) {
+    // 应用重力
+    jumpVelocity += gravity;
+
+    // 更新Y位置
+    astronaut.position.y += jumpVelocity;
+
+    // 检查是否落地
+    if (astronaut.position.y <= groundY) {
+      astronaut.position.y = groundY;
+      jumpVelocity = 0;
+      isJumping = false;
+      console.log("宇航员落地!");
+    }
+  } else {
+    // 确保在地面上
+    if (astronaut.position.y < groundY) {
+      astronaut.position.y = groundY;
+    }
+  }
+}
 
 // 更新宇航员移动
 function updateAstronautMovement() {
@@ -567,6 +612,9 @@ function animate() {
   // 更新宇航员移动
   updateAstronautMovement();
 
+  // 更新跳跃物理
+  updateJumpPhysics();
+
   // 更新相机位置和目标（始终跟随宇航员移动）
   updateFirstPersonCamera();
   updateThirdPersonTarget();
@@ -590,6 +638,7 @@ const keys = {
   backward: false,
   left: false,
   right: false,
+  jump: false,
 };
 
 document.addEventListener("keydown", (event) => {
@@ -605,6 +654,13 @@ document.addEventListener("keydown", (event) => {
       break;
     case "KeyD":
       keys.right = true;
+      break;
+    case "Space":
+      event.preventDefault(); // 防止页面滚动
+      if (!isJumping) {
+        keys.jump = true;
+        jump(); // 立即触发跳跃
+      }
       break;
   }
 });
@@ -622,6 +678,9 @@ document.addEventListener("keyup", (event) => {
       break;
     case "KeyD":
       keys.right = false;
+      break;
+    case "Space":
+      keys.jump = false;
       break;
     case "Escape":
       if (isFirstPerson) {
@@ -676,9 +735,10 @@ function createUI() {
   const instructions = document.createElement("div");
   instructions.className = "instructions";
   instructions.innerHTML = `
-    <p>第三人称模式：WS键移动宇航员，AD键转向</p>
-    <p>第一人称模式：WASD键移动相机，鼠标控制视角</p>
+    <p>第三人称模式：WS键移动宇航员，AD键转向，空格键跳跃</p>
+    <p>第一人称模式：WASD键移动相机，鼠标控制视角，空格键跳跃</p>
     <p>第一人称模式：点击屏幕锁定鼠标，移动鼠标控制视角，ESC解锁</p>
+    <p>跳跃功能：按空格键让宇航员跳跃（仅限宇航员模型）</p>
   `;
 
   // 创建第一人称提示
