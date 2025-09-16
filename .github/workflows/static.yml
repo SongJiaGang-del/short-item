@@ -15,14 +15,12 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since we're just deploying
   deploy:
     environment:
       name: github-pages
@@ -31,13 +29,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      # 新增步骤1：安装 Node.js（Vite 依赖 Node 环境）
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x # 使用与本地开发一致的 Node 版本
+
+      # 新增步骤2：进入项目目录并安装依赖
+      - name: Install dependencies
+        run: cd short-term && npm install # 进入 short-term 目录执行安装
+
+      # 新增步骤3：执行构建命令生成 dist 目录
+      - name: Build project
+        run: cd short-term && npm run build # 执行 package.json 中的 build 命令
+
       - name: Setup Pages
         uses: actions/configure-pages@v5
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: "short-term/dist"
+          path: "short-term/dist" # 上传构建后的 dist 目录
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
