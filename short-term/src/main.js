@@ -676,11 +676,9 @@ function createUI() {
   const instructions = document.createElement("div");
   instructions.className = "instructions";
   instructions.innerHTML = `
-    <p>第三人称模式：WASD键移动宇航员（以宇航员朝向为准）</p>
+    <p>第三人称模式：WS键移动宇航员，AD键转向</p>
     <p>第一人称模式：WASD键移动相机，鼠标控制视角</p>
     <p>第一人称模式：点击屏幕锁定鼠标，移动鼠标控制视角，ESC解锁</p>
-    <p>第一人称模式：垂直视角限制在±60度范围内</p>
-    <p>第三人称模式：跟随宇航员移动，鼠标拖拽旋转视角，滚轮缩放</p>
   `;
 
   // 创建第一人称提示
