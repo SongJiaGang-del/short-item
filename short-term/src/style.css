@@ -62,6 +62,30 @@ canvas:active {
   transform: translateY(0);
 }
 
+.focus-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(45deg, #2196F3, #1976D2);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.3);
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.focus-button:hover {
+  background: linear-gradient(45deg, #1976D2, #2196F3);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(33, 150, 243, 0.4);
+}
+
+.focus-button:active {
+  transform: translateY(0);
+}
+
 .instructions {
   color: white;
   font-size: 14px;
@@ -151,8 +175,37 @@ canvas:active {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
-/* 移动端跳跃按钮样式 */
-.mobile-jump-button {
+/* 移动端推进器按钮样式 */
+.mobile-thrust-up-button {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  color: white;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  transition: all 0.3s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.mobile-thrust-up-button:hover {
+  background: linear-gradient(45deg, #45a049, #4CAF50);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
+.mobile-thrust-up-button:active {
+  background: linear-gradient(45deg, #388E3C, #4CAF50);
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 10px rgba(76, 175, 80, 0.5);
+}
+
+.mobile-thrust-down-button {
   width: 80px;
   height: 80px;
   border-radius: 50%;
@@ -169,13 +222,13 @@ canvas:active {
   -webkit-touch-callout: none;
 }
 
-.mobile-jump-button:hover {
+.mobile-thrust-down-button:hover {
   background: linear-gradient(45deg, #FF5252, #FF6B6B);
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
 }
 
-.mobile-jump-button:active {
+.mobile-thrust-down-button:active {
   background: linear-gradient(45deg, #E53935, #FF5252);
   transform: translateY(0) scale(0.95);
   box-shadow: 0 2px 10px rgba(255, 107, 107, 0.5);
@@ -189,6 +242,11 @@ canvas:active {
   }
   
   .toggle-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .focus-button {
     padding: 8px 16px;
     font-size: 12px;
   }
@@ -215,8 +273,14 @@ canvas:active {
     height: 32px;
   }
   
-  /* 移动端跳跃按钮调整 */
-  .mobile-jump-button {
+  /* 移动端推进器按钮调整 */
+  .mobile-thrust-up-button {
+    width: 70px;
+    height: 70px;
+    font-size: 14px;
+  }
+  
+  .mobile-thrust-down-button {
     width: 70px;
     height: 70px;
     font-size: 14px;
@@ -235,7 +299,13 @@ canvas:active {
     height: 28px;
   }
   
-  .mobile-jump-button {
+  .mobile-thrust-up-button {
+    width: 60px;
+    height: 60px;
+    font-size: 12px;
+  }
+  
+  .mobile-thrust-down-button {
     width: 60px;
     height: 60px;
     font-size: 12px;

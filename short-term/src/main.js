@@ -12,13 +12,6 @@ let firstPersonControls, thirdPersonControls;
 let astronautVelocity = new THREE.Vector3();
 let astronautSpeed = 0.03;
 
-// 跳跃相关变量
-let isJumping = false;
-let jumpVelocity = 0;
-let jumpForce = 0.08; // 跳跃力度（稍微减小）
-let gravity = -0.001; // 重力加速度（减小，让下落更慢）
-let groundY = 0; // 地面Y坐标
-
 // 移动端相关变量
 let isMobile = false;
 let joystick = null;
@@ -39,20 +32,49 @@ function detectMobile() {
   return isMobileDevice || isTouchDevice;
 }
 
+// 创建星空背景
+function createStars() {
+  const starsGeometry = new THREE.BufferGeometry();
+  const starsCount = 2000;
+  const positions = new Float32Array(starsCount * 3);
+
+  for (let i = 0; i < starsCount; i++) {
+    const i3 = i * 3;
+    positions[i3] = (Math.random() - 0.5) * 10000;
+    positions[i3 + 1] = (Math.random() - 0.5) * 10000;
+    positions[i3 + 2] = (Math.random() - 0.5) * 10000;
+  }
+
+  starsGeometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(positions, 3)
+  );
+
+  const starsMaterial = new THREE.PointsMaterial({
+    color: 0xffffff,
+    size: 2,
+    transparent: true,
+    opacity: 0.8,
+  });
+
+  const stars = new THREE.Points(starsGeometry, starsMaterial);
+  scene.add(stars);
+}
+
 // 初始化场景
 function init() {
   // 创建场景
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x1a1a2e); // 更明亮的深蓝色背景
+  scene.background = new THREE.Color(0x0a0a1a); // 更深的背景色，更符合外太阳系
 
   // 创建相机
   camera = new THREE.PerspectiveCamera(
     75,
     window.innerWidth / window.innerHeight,
     0.1,
-    1000
+    20000 // 大幅增加远裁剪面以适应更大的太阳系
   );
-  camera.position.set(-8, 5, -8); // 斜后上方位置
+  camera.position.set(0, 500, 2000); // 调整到适合观察更大太阳系的位置
 
   // 创建渲染器
   renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -83,16 +105,8 @@ function init() {
   pointLight.position.set(0, 10, 0);
   scene.add(pointLight);
 
-  // 添加地面
-  const groundGeometry = new THREE.PlaneGeometry(100, 100);
-  const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x555555 }); // 更明亮的地面颜色
-  const ground = new THREE.Mesh(groundGeometry, groundMaterial);
-  ground.rotation.x = -Math.PI / 2;
-  ground.receiveShadow = true;
-  ground.renderOrder = 0; // 设置地面优先渲染
-  scene.add(ground);
-
-  // 移除方向标识相关代码
+  // 创建星空背景
+  createStars();
 
   // 初始化时钟
   clock = new THREE.Clock();
@@ -100,8 +114,18 @@ function init() {
   // 加载宇航员模型
   loadAstronaut();
 
+  // 加载太阳系模型
+  loadSolarSystem();
+
   // 初始化控制器
   initControls();
+
+  // 添加窗口大小调整事件监听器
+  window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 
   // 开始渲染循环
   animate();
@@ -149,7 +173,7 @@ function loadAstronaut() {
       (gltf) => {
         astronaut = gltf.scene;
         astronaut.scale.set(1, 1, 1);
-        astronaut.position.set(0, 0, 0);
+        astronaut.position.set(0, 50, 100); // 设置宇航员初始位置：在太阳系中心上方50单位，前方100单位
         astronaut.rotation.y = Math.PI; // 旋转180度，让面部朝向W方向（前方）
         astronaut.castShadow = true;
         astronaut.renderOrder = 0; // 设置宇航员优先渲染
@@ -200,43 +224,231 @@ function loadAstronaut() {
   tryLoadModel();
 }
 
-// 方向标识功能已移除
+// 加载太阳系模型
+function loadSolarSystem() {
+  const loader = new GLTFLoader();
 
-// 跳跃函数
-function jump() {
-  if (!astronaut || isJumping) return;
+  // 太阳系模型变量
+  let sunModel, earthModel, marsModel, venusModel, mercuryModel;
+  let jupiterModel, saturnModel, uranusModel, neptuneModel;
 
-  // 检查是否在地面上
-  if (astronaut.position.y <= groundY + 0.1) {
-    isJumping = true;
-    jumpVelocity = jumpForce;
-    console.log("宇航员开始跳跃!");
+  // 旋转组
+  const earthRotationGroup = new THREE.Group();
+  const marsRotationGroup = new THREE.Group();
+  const venusRotationGroup = new THREE.Group();
+  const mercuryRotationGroup = new THREE.Group();
+  const jupiterRotationGroup = new THREE.Group();
+  const saturnRotationGroup = new THREE.Group();
+  const uranusRotationGroup = new THREE.Group();
+  const neptuneRotationGroup = new THREE.Group();
+
+  scene.add(earthRotationGroup);
+  scene.add(marsRotationGroup);
+  scene.add(venusRotationGroup);
+  scene.add(mercuryRotationGroup);
+  scene.add(jupiterRotationGroup);
+  scene.add(saturnRotationGroup);
+  scene.add(uranusRotationGroup);
+  scene.add(neptuneRotationGroup);
+
+  // 创建轨道
+  function createOrbit(radius, color = 0x555555) {
+    const orbit = new THREE.Mesh(
+      new THREE.RingGeometry(radius, radius + 0.1, 64),
+      new THREE.MeshBasicMaterial({
+        color: color,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.3,
+      })
+    );
+    orbit.rotation.x = Math.PI / 2;
+    return orbit;
   }
+
+  // 添加轨道（增大轨道半径）
+  scene.add(createOrbit(30)); // 水星轨道（5倍）
+  scene.add(createOrbit(50)); // 金星轨道（5倍）
+  scene.add(createOrbit(75)); // 地球轨道（5倍）
+  scene.add(createOrbit(125)); // 火星轨道（5倍）
+  scene.add(createOrbit(350)); // 木星轨道（5倍）
+  scene.add(createOrbit(600)); // 土星轨道（5倍）
+  scene.add(createOrbit(900)); // 天王星轨道（5倍）
+  scene.add(createOrbit(1250)); // 海王星轨道（5倍）
+
+  // 加载太阳
+  loader.load("/model/sun/scene.gltf", (gltf) => {
+    sunModel = gltf.scene;
+    sunModel.scale.set(1.0, 1.0, 1.0); // 增大太阳尺寸
+    sunModel.position.set(0, 0, 0);
+    scene.add(sunModel);
+  });
+
+  // 加载水星
+  loader.load("/model/mercury/scene.gltf", (gltf) => {
+    mercuryModel = gltf.scene;
+    mercuryModel.scale.set(3, 3, 3); // 增大水星尺寸
+    mercuryModel.position.set(30, 0, 0); // 更新位置到新轨道半径
+    mercuryRotationGroup.add(mercuryModel);
+  });
+
+  // 加载金星
+  loader.load("/model/venus/scene.gltf", (gltf) => {
+    venusModel = gltf.scene;
+    venusModel.scale.set(6, 6, 6); // 增大金星尺寸
+    venusModel.position.set(50, 0, 0); // 更新位置到新轨道半径
+    venusRotationGroup.add(venusModel);
+  });
+
+  // 加载地球
+  loader.load("/model/earth/scene.gltf", (gltf) => {
+    earthModel = gltf.scene;
+    earthModel.scale.set(60, 60, 60); // 增大地球尺寸
+    earthModel.position.set(75, 0, 0); // 更新位置到新轨道半径
+    earthRotationGroup.add(earthModel);
+  });
+
+  // 加载火星
+  loader.load("/model/mars/scene.gltf", (gltf) => {
+    marsModel = gltf.scene;
+    marsModel.scale.set(9, 9, 9); // 增大火星尺寸
+    marsModel.position.set(125, 0, 0); // 更新位置到新轨道半径
+    marsRotationGroup.add(marsModel);
+  });
+
+  // 加载木星
+  loader.load("/model/jupiter/scene.gltf", (gltf) => {
+    jupiterModel = gltf.scene;
+    jupiterModel.scale.set(15, 15, 15); // 增大木星尺寸
+    jupiterModel.position.set(350, 0, 0); // 更新位置到新轨道半径
+    jupiterRotationGroup.add(jupiterModel);
+  });
+
+  // 加载土星
+  loader.load("/model/saturn/scene.gltf", (gltf) => {
+    saturnModel = gltf.scene;
+    saturnModel.scale.set(0.3, 0.3, 0.3); // 增大土星尺寸
+    saturnModel.position.set(600, 0, 0); // 更新位置到新轨道半径
+    saturnRotationGroup.add(saturnModel);
+  });
+
+  // 加载天王星
+  loader.load("/model/uranus/scene.gltf", (gltf) => {
+    uranusModel = gltf.scene;
+    uranusModel.scale.set(0.3, 0.3, 0.3); // 增大天王星尺寸
+    uranusModel.position.set(900, 0, 0); // 更新位置到新轨道半径
+    uranusModel.rotation.x = Math.PI / 2.05; // 98度倾斜
+    uranusRotationGroup.add(uranusModel);
+  });
+
+  // 加载海王星
+  loader.load("/model/neptune/scene.gltf", (gltf) => {
+    neptuneModel = gltf.scene;
+    neptuneModel.scale.set(3, 3, 3); // 增大海王星尺寸
+    neptuneModel.position.set(1250, 0, 0); // 更新位置到新轨道半径
+    neptuneModel.rotation.x = Math.PI / 6.3; // 28.3度倾斜
+    neptuneRotationGroup.add(neptuneModel);
+  });
+
+  // 将太阳系模型变量存储到全局，供动画使用
+  window.solarSystemModels = {
+    sun: sunModel,
+    mercury: mercuryModel,
+    venus: venusModel,
+    earth: earthModel,
+    mars: marsModel,
+    jupiter: jupiterModel,
+    saturn: saturnModel,
+    uranus: uranusModel,
+    neptune: neptuneModel,
+    rotationGroups: {
+      mercury: mercuryRotationGroup,
+      venus: venusRotationGroup,
+      earth: earthRotationGroup,
+      mars: marsRotationGroup,
+      jupiter: jupiterRotationGroup,
+      saturn: saturnRotationGroup,
+      uranus: uranusRotationGroup,
+      neptune: neptuneRotationGroup,
+    },
+  };
 }
 
-// 更新跳跃物理
-function updateJumpPhysics() {
-  if (!astronaut) return;
+// 方向标识功能已移除
 
-  if (isJumping) {
-    // 应用重力
-    jumpVelocity += gravity;
+// 更新太阳系动画
+function updateSolarSystemAnimation(delta) {
+  if (!window.solarSystemModels) return;
 
-    // 更新Y位置
-    astronaut.position.y += jumpVelocity;
+  const models = window.solarSystemModels;
 
-    // 检查是否落地
-    if (astronaut.position.y <= groundY) {
-      astronaut.position.y = groundY;
-      jumpVelocity = 0;
-      isJumping = false;
-      console.log("宇航员落地!");
-    }
-  } else {
-    // 确保在地面上
-    if (astronaut.position.y < groundY) {
-      astronaut.position.y = groundY;
-    }
+  // 太阳自转
+  if (models.sun) {
+    models.sun.rotation.y += 0.01;
+  }
+
+  // 水星公转和自转
+  if (models.rotationGroups.mercury) {
+    models.rotationGroups.mercury.rotation.y += 0.012; // 公转速度最快
+  }
+  if (models.mercury) {
+    models.mercury.rotation.y += 0.008; // 自转速度较慢
+  }
+
+  // 金星公转和自转（金星自转非常缓慢且方向相反）
+  if (models.rotationGroups.venus) {
+    models.rotationGroups.venus.rotation.y += 0.007; // 公转速度比地球快
+  }
+  if (models.venus) {
+    models.venus.rotation.y -= 0.001; // 负号表示逆向自转
+  }
+
+  // 地球公转和自转
+  if (models.rotationGroups.earth) {
+    models.rotationGroups.earth.rotation.y += 0.005;
+  }
+  if (models.earth) {
+    models.earth.rotation.y += 0.02;
+  }
+
+  // 火星公转和自转（速度比地球慢）
+  if (models.rotationGroups.mars) {
+    models.rotationGroups.mars.rotation.y += 0.003;
+  }
+  if (models.mars) {
+    models.mars.rotation.y += 0.018;
+  }
+
+  // 木星公转和自转（气态巨行星自转快、公转慢）
+  if (models.rotationGroups.jupiter) {
+    models.rotationGroups.jupiter.rotation.y += 0.001; // 公转速度很慢
+  }
+  if (models.jupiter) {
+    models.jupiter.rotation.y += 0.04; // 自转速度非常快
+  }
+
+  // 土星公转和自转
+  if (models.rotationGroups.saturn) {
+    models.rotationGroups.saturn.rotation.y += 0.0007; // 公转速度比木星更慢
+  }
+  if (models.saturn) {
+    models.saturn.rotation.y += 0.038; // 自转速度快
+  }
+
+  // 天王星公转和自转
+  if (models.rotationGroups.uranus) {
+    models.rotationGroups.uranus.rotation.y += 0.0004; // 公转速度更慢
+  }
+  if (models.uranus) {
+    models.uranus.rotation.y += 0.035; // 自转速度
+  }
+
+  // 海王星公转和自转
+  if (models.rotationGroups.neptune) {
+    models.rotationGroups.neptune.rotation.y += 0.0001; // 公转速度最慢
+  }
+  if (models.neptune) {
+    models.neptune.rotation.y += 0.032; // 自转速度
   }
 }
 
@@ -247,6 +459,14 @@ function updateAstronautMovement() {
   // 重置速度
   astronautVelocity.set(0, 0, 0);
 
+  // 上浮和下沉控制（太空环境）
+  if (keys.up) {
+    astronautVelocity.y += astronautSpeed;
+  }
+  if (keys.down) {
+    astronautVelocity.y -= astronautSpeed;
+  }
+
   // 移动端摇杆控制
   if (isMobile && joystickActive) {
     // 计算摇杆输入值（-1 到 1）
@@ -254,7 +474,7 @@ function updateAstronautMovement() {
     const inputY = -joystickPosition.y / joystickRadius; // 反转Y轴，向上为正
 
     if (isFirstPerson) {
-      // 第一人称模式：使用相机方向控制移动
+      // 第一人称模式：摇杆控制前进后退和左右移动，视角只能通过触摸控制
       if (!firstPersonControls) return;
 
       // 获取相机的朝向
@@ -279,11 +499,8 @@ function updateAstronautMovement() {
         right.clone().multiplyScalar(inputX * astronautSpeed)
       );
 
-      // 更新宇航员朝向（朝向移动方向）
-      if (astronautVelocity.length() > 0) {
-        const moveDirection = astronautVelocity.clone().normalize();
-        astronaut.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
-      }
+      // 宇航员朝向跟随相机方向（不根据移动方向改变）
+      astronaut.rotation.y = Math.atan2(direction.x, direction.z);
     } else {
       // 第三人称模式：摇杆控制移动和转向
       let angle = astronaut.rotation.y;
@@ -305,7 +522,7 @@ function updateAstronautMovement() {
       }
     }
   } else if (isFirstPerson) {
-    // 第一人称模式：使用相机方向控制移动
+    // 第一人称模式：只使用W/S控制前进后退，A/D键无效，视角只能通过鼠标控制
     if (!firstPersonControls) return;
 
     // 获取相机的朝向
@@ -318,13 +535,15 @@ function updateAstronautMovement() {
       .crossVectors(forward, new THREE.Vector3(0, 1, 0))
       .normalize();
 
-    // WASD控制移动
+    // W/S控制前后移动
     if (keys.forward) {
       astronautVelocity.add(forward.clone().multiplyScalar(astronautSpeed));
     }
     if (keys.backward) {
       astronautVelocity.add(forward.clone().multiplyScalar(-astronautSpeed));
     }
+
+    // A/D控制左右移动（侧移）
     if (keys.left) {
       astronautVelocity.add(right.clone().multiplyScalar(-astronautSpeed));
     }
@@ -332,11 +551,8 @@ function updateAstronautMovement() {
       astronautVelocity.add(right.clone().multiplyScalar(astronautSpeed));
     }
 
-    // 更新宇航员朝向（朝向移动方向）
-    if (astronautVelocity.length() > 0) {
-      const moveDirection = astronautVelocity.clone().normalize();
-      astronaut.rotation.y = Math.atan2(moveDirection.x, moveDirection.z);
-    }
+    // 宇航员朝向跟随相机方向（不根据移动方向改变）
+    astronaut.rotation.y = Math.atan2(direction.x, direction.z);
   } else {
     // 第三人称模式：A/D转向，W/S前后移动
     let angle = astronaut.rotation.y;
@@ -365,9 +581,9 @@ function updateAstronautMovement() {
   // 应用移动
   astronaut.position.add(astronautVelocity);
 
-  // 限制移动范围（扩大到50x50区域）
-  astronaut.position.x = Math.max(-50, Math.min(50, astronaut.position.x));
-  astronaut.position.z = Math.max(-50, Math.min(50, astronaut.position.z));
+  // 限制移动范围（扩大到1500x1500区域，适应更大的太阳系规模）
+  astronaut.position.x = Math.max(-1500, Math.min(1500, astronaut.position.x));
+  astronaut.position.z = Math.max(-1500, Math.min(1500, astronaut.position.z));
 }
 
 // 创建备用模型
@@ -444,7 +660,7 @@ function createFallbackModel() {
   group.add(helmet);
 
   astronaut = group;
-  astronaut.position.set(0, 0, 0);
+  astronaut.position.set(0, 50, 100); // 设置备用宇航员初始位置：在太阳系中心上方50单位，前方100单位
   astronaut.rotation.y = Math.PI; // 旋转180度，让面部朝向W方向（前方）
   astronaut.renderOrder = 0; // 设置备用模型优先渲染
   scene.add(astronaut);
@@ -460,8 +676,8 @@ function initControls() {
     thirdPersonControls.enableDamping = true;
     thirdPersonControls.dampingFactor = 0.05;
     thirdPersonControls.screenSpacePanning = false;
-    thirdPersonControls.minDistance = 3;
-    thirdPersonControls.maxDistance = 50; // 增加最大距离
+    thirdPersonControls.minDistance = 50;
+    thirdPersonControls.maxDistance = 5000; // 大幅增加最大距离以适应更大的太阳系
     thirdPersonControls.maxPolarAngle = Math.PI / 2;
 
     // 第一人称控制器
@@ -496,22 +712,22 @@ function setThirdPersonView() {
   thirdPersonControls.enabled = true;
 
   if (astronaut) {
-    // 相对于宇航员的位置 - 斜后上方
+    // 相对于宇航员的位置 - 适合观察更大太阳系的位置
     const astronautPosition = new THREE.Vector3();
     astronaut.getWorldPosition(astronautPosition);
 
     // 只在切换视角时设置初始位置，之后让用户控制
     camera.position.set(
-      astronautPosition.x - 8, // 后方
-      astronautPosition.y + 5, // 上方
-      astronautPosition.z - 8 // 后方
+      astronautPosition.x, // 保持X位置
+      astronautPosition.y + 200, // 上方更高
+      astronautPosition.z + 500 // 后方更远
     );
     thirdPersonControls.target.copy(astronautPosition);
     thirdPersonControls.target.y += 1; // 看向宇航员头部位置
   } else {
-    // 如果没有宇航员，使用默认位置 - 斜后上方
-    camera.position.set(-8, 5, -8);
-    thirdPersonControls.target.set(0, 1, 0);
+    // 如果没有宇航员，使用适合观察更大太阳系的位置
+    camera.position.set(0, 500, 2000);
+    thirdPersonControls.target.set(0, 0, 0);
   }
 
   thirdPersonControls.update();
@@ -672,6 +888,39 @@ function toggleView() {
   }
 }
 
+// 将相机定位到宇航员侧后方
+function focusOnAstronaut() {
+  if (!astronaut || isFirstPerson) return;
+
+  // 获取宇航员位置
+  const astronautPosition = new THREE.Vector3();
+  astronaut.getWorldPosition(astronautPosition);
+
+  // 计算宇航员的面部朝向
+  const astronautRotation = astronaut.rotation.y;
+
+  // 计算侧后方位置（宇航员右后方45度角）
+  const sideAngle = astronautRotation + Math.PI * 0.75; // 右后方45度
+  const distance = 50; // 距离宇航员的距离（非常近的特写视角）
+  const height = 25; // 相机高度（更贴近宇航员）
+
+  const cameraX = astronautPosition.x + Math.sin(sideAngle) * distance;
+  const cameraY = astronautPosition.y + height;
+  const cameraZ = astronautPosition.z + Math.cos(sideAngle) * distance;
+
+  // 设置相机位置
+  camera.position.set(cameraX, cameraY, cameraZ);
+
+  // 设置相机目标为宇航员
+  thirdPersonControls.target.copy(astronautPosition);
+  thirdPersonControls.target.y += 1; // 稍微看向宇航员上方（更贴近）
+
+  // 更新控制器
+  thirdPersonControls.update();
+
+  console.log("相机已定位到宇航员侧后方 - 特写视角");
+}
+
 // 动画循环
 function animate() {
   requestAnimationFrame(animate);
@@ -686,8 +935,8 @@ function animate() {
   // 更新宇航员移动
   updateAstronautMovement();
 
-  // 更新跳跃物理
-  updateJumpPhysics();
+  // 更新太阳系动画
+  updateSolarSystemAnimation(delta);
 
   // 更新相机位置和目标（始终跟随宇航员移动）
   updateFirstPersonCamera();
@@ -712,7 +961,8 @@ const keys = {
   backward: false,
   left: false,
   right: false,
-  jump: false,
+  up: false,
+  down: false,
 };
 
 document.addEventListener("keydown", (event) => {
@@ -731,10 +981,11 @@ document.addEventListener("keydown", (event) => {
       break;
     case "Space":
       event.preventDefault(); // 防止页面滚动
-      if (!isJumping) {
-        keys.jump = true;
-        jump(); // 立即触发跳跃
-      }
+      keys.up = true;
+      break;
+    case "KeyX":
+      event.preventDefault();
+      keys.down = true;
       break;
   }
 });
@@ -754,7 +1005,10 @@ document.addEventListener("keyup", (event) => {
       keys.right = false;
       break;
     case "Space":
-      keys.jump = false;
+      keys.up = false;
+      break;
+    case "KeyX":
+      keys.down = false;
       break;
     case "Escape":
       if (isFirstPerson) {
@@ -762,13 +1016,6 @@ document.addEventListener("keyup", (event) => {
       }
       break;
   }
-});
-
-// 窗口大小调整
-window.addEventListener("resize", () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
 // 指针锁定状态监听
@@ -906,34 +1153,74 @@ function updateJoystickPosition(x, y) {
   joystick.knob.style.transform = `translate(${joystickPosition.x}px, ${joystickPosition.y}px)`;
 }
 
-// 创建移动端跳跃按钮
+// 创建移动端上浮下沉按钮
 function createMobileJumpButton() {
-  const jumpButton = document.createElement("button");
-  jumpButton.id = "mobile-jump-button";
-  jumpButton.className = "mobile-jump-button";
-  jumpButton.textContent = "跳跃";
+  // 上浮按钮
+  const thrustUpButton = document.createElement("button");
+  thrustUpButton.id = "mobile-thrust-up-button";
+  thrustUpButton.className = "mobile-thrust-up-button";
+  thrustUpButton.textContent = "上浮";
 
-  // 设置按钮位置（右下角）
-  jumpButton.style.position = "fixed";
-  jumpButton.style.right = "20px";
-  jumpButton.style.bottom = "20px";
-  jumpButton.style.zIndex = "1000";
+  // 设置上浮按钮位置（右下角）
+  thrustUpButton.style.position = "fixed";
+  thrustUpButton.style.right = "20px";
+  thrustUpButton.style.bottom = "20px";
+  thrustUpButton.style.zIndex = "1000";
 
-  jumpButton.addEventListener("touchstart", (e) => {
+  thrustUpButton.addEventListener("touchstart", (e) => {
     e.preventDefault();
-    if (!isJumping) {
-      jump();
-    }
+    keys.up = true;
   });
 
-  jumpButton.addEventListener("mousedown", (e) => {
+  thrustUpButton.addEventListener("touchend", (e) => {
     e.preventDefault();
-    if (!isJumping) {
-      jump();
-    }
+    keys.up = false;
   });
 
-  document.body.appendChild(jumpButton);
+  thrustUpButton.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    keys.up = true;
+  });
+
+  thrustUpButton.addEventListener("mouseup", (e) => {
+    e.preventDefault();
+    keys.up = false;
+  });
+
+  // 下沉按钮
+  const thrustDownButton = document.createElement("button");
+  thrustDownButton.id = "mobile-thrust-down-button";
+  thrustDownButton.className = "mobile-thrust-down-button";
+  thrustDownButton.textContent = "下沉";
+
+  // 设置下沉按钮位置（右下角，上浮按钮上方）
+  thrustDownButton.style.position = "fixed";
+  thrustDownButton.style.right = "20px";
+  thrustDownButton.style.bottom = "100px";
+  thrustDownButton.style.zIndex = "1000";
+
+  thrustDownButton.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    keys.down = true;
+  });
+
+  thrustDownButton.addEventListener("touchend", (e) => {
+    e.preventDefault();
+    keys.down = false;
+  });
+
+  thrustDownButton.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    keys.down = true;
+  });
+
+  thrustDownButton.addEventListener("mouseup", (e) => {
+    e.preventDefault();
+    keys.down = false;
+  });
+
+  document.body.appendChild(thrustUpButton);
+  document.body.appendChild(thrustDownButton);
 }
 
 // 创建UI
@@ -949,14 +1236,20 @@ function createUI() {
   toggleButton.className = "toggle-button";
   toggleButton.addEventListener("click", toggleView);
 
+  const focusButton = document.createElement("button");
+  focusButton.textContent = "聚焦宇航员";
+  focusButton.className = "focus-button";
+  focusButton.addEventListener("click", focusOnAstronaut);
+
   const instructions = document.createElement("div");
   instructions.className = "instructions";
 
   if (isMobile) {
     instructions.innerHTML = `
       <p>移动端控制：使用左下角摇杆移动宇航员</p>
-      <p>跳跃功能：点击右下角跳跃按钮</p>
+      <p>垂直移动：点击右下角上浮/下沉按钮</p>
       <p>视角切换：点击切换视角按钮</p>
+      <p>聚焦功能：点击聚焦宇航员按钮</p>
     `;
 
     // 创建移动端控制元素
@@ -964,10 +1257,11 @@ function createUI() {
     createMobileJumpButton();
   } else {
     instructions.innerHTML = `
-      <p>第三人称模式：WS键移动宇航员，AD键转向，空格键跳跃</p>
-      <p>第一人称模式：WASD键移动相机，鼠标控制视角，空格键跳跃</p>
+      <p>第三人称模式：WS键移动宇航员，AD键转向</p>
+      <p>第一人称模式：WASD键移动，鼠标控制视角</p>
       <p>第一人称模式：点击屏幕锁定鼠标，移动鼠标控制视角，ESC解锁</p>
-      <p>跳跃功能：按空格键让宇航员跳跃（仅限宇航员模型）</p>
+      <p>垂直移动：空格键上浮，X键下沉（仅限宇航员模型）</p>
+      <p>聚焦功能：点击聚焦宇航员按钮快速定位相机</p>
     `;
   }
 
@@ -979,6 +1273,7 @@ function createUI() {
   firstPersonHint.style.display = "none";
 
   uiContainer.appendChild(toggleButton);
+  uiContainer.appendChild(focusButton);
   uiContainer.appendChild(instructions);
   uiContainer.appendChild(firstPersonHint);
   document.getElementById("app").appendChild(uiContainer);
