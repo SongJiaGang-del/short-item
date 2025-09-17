@@ -179,7 +179,6 @@ function loadAstronaut() {
     }
 
     const modelPath = modelPaths[currentPathIndex];
-    console.log(`尝试加载模型: ${modelPath}`);
 
     loader.load(
       modelPath,
@@ -204,8 +203,6 @@ function loadAstronaut() {
         if (loadingDiv.parentNode) {
           loadingDiv.parentNode.removeChild(loadingDiv);
         }
-
-        console.log("模型加载成功!");
       },
       (progress) => {
         // 更新加载进度
@@ -219,7 +216,6 @@ function loadAstronaut() {
         }
       },
       (error) => {
-        console.error(`加载模型失败 (${modelPath}):`, error);
         currentPathIndex++;
         if (currentPathIndex < modelPaths.length) {
           loadingDiv.textContent = `尝试其他路径... (${currentPathIndex + 1}/${
@@ -297,7 +293,6 @@ function loadSolarSystem() {
     sunModel.userData = { name: "太阳", type: "star" }; // 添加用户数据
     scene.add(sunModel);
     planetModels.sun = sunModel; // 存储引用
-    console.log("太阳模型加载完成:", sunModel);
   });
 
   // 加载水星
@@ -308,7 +303,6 @@ function loadSolarSystem() {
     mercuryModel.userData = { name: "水星", type: "planet" }; // 添加用户数据
     mercuryRotationGroup.add(mercuryModel);
     planetModels.mercury = mercuryModel; // 存储引用
-    console.log("水星模型加载完成:", mercuryModel);
   });
 
   // 加载金星
@@ -319,7 +313,6 @@ function loadSolarSystem() {
     venusModel.userData = { name: "金星", type: "planet" }; // 添加用户数据
     venusRotationGroup.add(venusModel);
     planetModels.venus = venusModel; // 存储引用
-    console.log("金星模型加载完成:", venusModel);
   });
 
   // 加载地球
@@ -330,7 +323,6 @@ function loadSolarSystem() {
     earthModel.userData = { name: "地球", type: "planet" }; // 添加用户数据
     earthRotationGroup.add(earthModel);
     planetModels.earth = earthModel; // 存储引用
-    console.log("地球模型加载完成:", earthModel);
   });
 
   // 加载火星
@@ -408,8 +400,6 @@ function loadSolarSystem() {
     },
   };
 }
-
-// 方向标识功能已移除
 
 // 更新太阳系动画
 function updateSolarSystemAnimation(delta) {
@@ -673,8 +663,6 @@ function updateAstronautMovement() {
 
 // 创建备用模型
 function createFallbackModel() {
-  console.log("创建备用模型...");
-
   // 创建宇航员形状的几何体组合
   const group = new THREE.Group();
 
@@ -749,8 +737,6 @@ function createFallbackModel() {
   astronaut.rotation.y = Math.PI; // 旋转180度，让面部朝向W方向（前方）
   astronaut.renderOrder = 0; // 设置备用模型优先渲染
   scene.add(astronaut);
-
-  console.log("备用模型创建完成!");
 }
 
 // 初始化控制器
@@ -770,9 +756,7 @@ function initControls() {
 
     // 设置初始控制器
     setThirdPersonView();
-  } catch (error) {
-    console.error("初始化控制器时出错:", error);
-  }
+  } catch (error) {}
 }
 
 // 设置第三人称视角
@@ -948,7 +932,6 @@ function updateThirdPersonTarget() {
   }
 }
 
-// 方向标识更新功能已移除
 
 // 锁定指针（用于第一人称视角）
 function lockPointer() {
@@ -1002,8 +985,6 @@ function focusOnAstronaut() {
 
   // 更新控制器
   thirdPersonControls.update();
-
-  console.log("相机已定位到宇航员侧后方 - 特写视角");
 }
 
 // 动画循环
@@ -1113,14 +1094,12 @@ document.addEventListener("keyup", (event) => {
 // 指针锁定状态监听
 document.addEventListener("pointerlockchange", () => {
   if (document.pointerLockElement === renderer.domElement) {
-    console.log("指针已锁定 - 第一人称模式激活");
     // 隐藏提示
     const hint = document.getElementById("firstPersonHint");
     if (hint) {
       hint.style.display = "none";
     }
   } else {
-    console.log("指针已解锁");
     // 如果还在第一人称模式，显示提示
     if (isFirstPerson) {
       const hint = document.getElementById("firstPersonHint");
@@ -1131,9 +1110,7 @@ document.addEventListener("pointerlockchange", () => {
   }
 });
 
-document.addEventListener("pointerlockerror", () => {
-  console.log("指针锁定失败");
-});
+document.addEventListener("pointerlockerror", () => {});
 
 // 创建虚拟摇杆
 function createJoystick() {
@@ -1329,16 +1306,12 @@ function onMouseClick(event) {
   // 获取所有可点击的对象（行星和太阳）
   const clickableObjects = Object.values(planetModels).filter((model) => model);
 
-  console.log("可点击对象数量:", clickableObjects.length);
-  console.log("行星模型:", planetModels);
-
   // 检测射线与对象的交点（包括子对象）
   const intersects = raycaster.intersectObjects(clickableObjects, true);
 
   // 如果直接检测失败，尝试检测整个场景
   if (intersects.length === 0) {
     const sceneIntersects = raycaster.intersectObjects(scene.children, true);
-    console.log("场景检测结果:", sceneIntersects.length);
 
     // 在场景检测结果中查找行星
     for (const intersect of sceneIntersects) {
@@ -1347,18 +1320,14 @@ function onMouseClick(event) {
         obj = obj.parent;
       }
       if (obj && obj.userData.name) {
-        console.log("通过场景检测找到行星:", obj.userData.name);
         showPlanetModal(obj.userData.name, obj.userData.type);
         return;
       }
     }
   }
 
-  console.log("射线交点数量:", intersects.length);
-
   if (intersects.length > 0) {
     const clickedObject = intersects[0].object;
-    console.log("点击的对象:", clickedObject);
 
     // 找到包含用户数据的父对象
     let parent = clickedObject;
@@ -1366,8 +1335,6 @@ function onMouseClick(event) {
 
     // 向上遍历父对象，寻找包含正确用户数据的对象
     while (parent) {
-      console.log("检查父对象:", parent.name, parent.userData);
-
       // 检查是否有用户数据且名称是中文（我们的行星名称）
       if (
         parent.userData &&
@@ -1381,15 +1348,8 @@ function onMouseClick(event) {
     }
 
     if (foundPlanet && foundPlanet.userData.name) {
-      console.log("找到行星:", foundPlanet.userData.name);
-      console.log("行星类型:", foundPlanet.userData.type);
-      console.log("完整用户数据:", foundPlanet.userData);
       showPlanetModal(foundPlanet.userData.name, foundPlanet.userData.type);
     } else {
-      console.log("未找到行星用户数据");
-      console.log("点击对象的完整结构:", clickedObject);
-      console.log("遍历路径:", clickedObject.name);
-
       // 尝试通过模型名称映射找到对应的行星
       const modelName = clickedObject.name;
       let planetName = null;
@@ -1425,12 +1385,10 @@ function onMouseClick(event) {
       }
 
       if (planetName) {
-        console.log("通过模型名称推断行星:", planetName);
         showPlanetModal(planetName, "planet");
       }
     }
   } else {
-    console.log("没有检测到点击");
   }
 }
 
@@ -1575,17 +1533,8 @@ const planetInfo = {
 
 // 显示行星信息模态框
 function showPlanetModal(planetName, planetType) {
-  console.log("showPlanetModal 被调用:", planetName, planetType);
-
   const info = planetInfo[planetName];
-  console.log("行星信息:", info);
-
-  if (!info) {
-    console.log("未找到行星信息:", planetName);
-    return;
-  }
-
-  console.log("开始创建模态框...");
+  if (!info) return;
 
   // 创建模态框
   const modal = document.createElement("div");
@@ -1635,16 +1584,6 @@ function showPlanetModal(planetName, planetType) {
 
   // 添加到页面
   document.body.appendChild(modal);
-  console.log("模态框已添加到页面");
-
-  // 检查模态框是否真的被添加
-  setTimeout(() => {
-    const addedModal = document.querySelector(".planet-modal");
-    console.log("检查模态框是否存在:", addedModal);
-    if (addedModal) {
-      console.log("模态框样式:", window.getComputedStyle(addedModal).display);
-    }
-  }, 100);
 }
 
 // 切换科普模式
@@ -1664,19 +1603,6 @@ function toggleEducationMode() {
     hint.style.display = isEducationMode ? "block" : "none";
   }
 
-  console.log(`科普模式${isEducationMode ? "已开启" : "已关闭"}`);
-
-  // 调试：显示所有行星模型状态
-  if (isEducationMode) {
-    console.log("=== 行星模型状态 ===");
-    Object.keys(planetModels).forEach((key) => {
-      const model = planetModels[key];
-      console.log(`${key}:`, model ? "已加载" : "未加载", model);
-      if (model) {
-        console.log(`  - 用户数据:`, model.userData);
-      }
-    });
-  }
 }
 
 // 创建UI
