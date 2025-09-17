@@ -154,83 +154,46 @@ function loadAstronaut() {
   loadingDiv.textContent = "正在加载宇航员模型...";
   document.getElementById("app").appendChild(loadingDiv);
 
-  // 尝试多个可能的路径
-  const modelPaths = [
-    "./模型存放点/astronaut/scene.gltf",
-    "/模型存放点/astronaut/scene.gltf",
-    "./astronaut/scene.gltf",
-  ];
+  loader.load(
+    "./model/astronaut/scene.gltf",
+    (gltf) => {
+      astronaut = gltf.scene;
+      astronaut.scale.set(1, 1, 1);
+      astronaut.position.set(0, 50, 100); // 设置宇航员初始位置：在太阳系中心上方50单位，前方100单位
+      astronaut.rotation.y = Math.PI; // 旋转180度，让面部朝向W方向（前方）
+      astronaut.castShadow = true;
+      astronaut.renderOrder = 0; // 设置宇航员优先渲染
 
-  let currentPathIndex = 0;
-
-  function tryLoadModel() {
-    if (currentPathIndex >= modelPaths.length) {
-      loadingDiv.textContent = "模型加载失败，创建备用模型";
-      loadingDiv.style.color = "#ff6b6b";
-
-      // 创建备用模型
-      setTimeout(() => {
-        createFallbackModel();
-        if (loadingDiv.parentNode) {
-          loadingDiv.parentNode.removeChild(loadingDiv);
-        }
-      }, 2000);
-      return;
-    }
-
-    const modelPath = modelPaths[currentPathIndex];
-
-    loader.load(
-      modelPath,
-      (gltf) => {
-        astronaut = gltf.scene;
-        astronaut.scale.set(1, 1, 1);
-        astronaut.position.set(0, 50, 100); // 设置宇航员初始位置：在太阳系中心上方50单位，前方100单位
-        astronaut.rotation.y = Math.PI; // 旋转180度，让面部朝向W方向（前方）
-        astronaut.castShadow = true;
-        astronaut.renderOrder = 0; // 设置宇航员优先渲染
-
-        // 设置动画混合器
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(astronaut);
-          const action = mixer.clipAction(gltf.animations[0]);
-          action.play();
-        }
-
-        scene.add(astronaut);
-
-        // 移除加载提示
-        if (loadingDiv.parentNode) {
-          loadingDiv.parentNode.removeChild(loadingDiv);
-        }
-      },
-      (progress) => {
-        // 更新加载进度
-        if (progress.total > 0) {
-          const percent = Math.round((progress.loaded / progress.total) * 100);
-          loadingDiv.textContent = `正在加载宇航员模型... ${percent}%`;
-        } else {
-          loadingDiv.textContent = `正在加载宇航员模型... ${Math.round(
-            progress.loaded / 1024
-          )}KB`;
-        }
-      },
-      (error) => {
-        currentPathIndex++;
-        if (currentPathIndex < modelPaths.length) {
-          loadingDiv.textContent = `尝试其他路径... (${currentPathIndex + 1}/${
-            modelPaths.length
-          })`;
-          setTimeout(tryLoadModel, 1000);
-        } else {
-          loadingDiv.textContent = "模型加载失败，请检查文件路径";
-          loadingDiv.style.color = "#ff6b6b";
-        }
+      // 设置动画混合器
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(astronaut);
+        const action = mixer.clipAction(gltf.animations[0]);
+        action.play();
       }
-    );
-  }
 
-  tryLoadModel();
+      scene.add(astronaut);
+
+      // 移除加载提示
+      if (loadingDiv.parentNode) {
+        loadingDiv.parentNode.removeChild(loadingDiv);
+      }
+    },
+    (progress) => {
+      // 更新加载进度
+      if (progress.total > 0) {
+        const percent = Math.round((progress.loaded / progress.total) * 100);
+        loadingDiv.textContent = `正在加载宇航员模型... ${percent}%`;
+      } else {
+        loadingDiv.textContent = `正在加载宇航员模型... ${Math.round(
+          progress.loaded / 1024
+        )}KB`;
+      }
+    },
+    (error) => {
+      loadingDiv.textContent = "模型加载失败，请检查文件路径";
+      loadingDiv.style.color = "#ff6b6b";
+    }
+  );
 }
 
 // 加载太阳系模型
@@ -659,84 +622,6 @@ function updateAstronautMovement() {
   // 限制移动范围（扩大到1500x1500区域，适应更大的太阳系规模）
   astronaut.position.x = Math.max(-1500, Math.min(1500, astronaut.position.x));
   astronaut.position.z = Math.max(-1500, Math.min(1500, astronaut.position.z));
-}
-
-// 创建备用模型
-function createFallbackModel() {
-  // 创建宇航员形状的几何体组合
-  const group = new THREE.Group();
-
-  // 身体（圆柱体）
-  const bodyGeometry = new THREE.CylinderGeometry(0.5, 0.6, 1.5, 8);
-  const bodyMaterial = new THREE.MeshLambertMaterial({ color: 0xf0f0f0 }); // 更明亮的白色
-  const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
-  body.position.y = 0.75;
-  body.castShadow = true;
-  group.add(body);
-
-  // 头部（球体）
-  const headGeometry = new THREE.SphereGeometry(0.4, 8, 6);
-  const headMaterial = new THREE.MeshLambertMaterial({ color: 0xffe4c4 }); // 更明亮的肤色
-  const head = new THREE.Mesh(headGeometry, headMaterial);
-  head.position.y = 1.8;
-  head.castShadow = true;
-  group.add(head);
-
-  // 手臂（圆柱体）
-  const armGeometry = new THREE.CylinderGeometry(0.15, 0.15, 1, 6);
-  const armMaterial = new THREE.MeshLambertMaterial({ color: 0xf0f0f0 }); // 更明亮的白色
-
-  const leftArm = new THREE.Mesh(armGeometry, armMaterial);
-  leftArm.position.set(-0.8, 1, 0);
-  leftArm.rotation.z = Math.PI / 4;
-  leftArm.castShadow = true;
-  group.add(leftArm);
-
-  const rightArm = new THREE.Mesh(armGeometry, armMaterial);
-  rightArm.position.set(0.8, 1, 0);
-  rightArm.rotation.z = -Math.PI / 4;
-  rightArm.castShadow = true;
-  group.add(rightArm);
-
-  // 腿部（圆柱体）
-  const legGeometry = new THREE.CylinderGeometry(0.2, 0.2, 1, 6);
-  const legMaterial = new THREE.MeshLambertMaterial({ color: 0x0000aa }); // 更明亮的蓝色
-
-  const leftLeg = new THREE.Mesh(legGeometry, legMaterial);
-  leftLeg.position.set(-0.3, -0.5, 0);
-  leftLeg.castShadow = true;
-  group.add(leftLeg);
-
-  const rightLeg = new THREE.Mesh(legGeometry, legMaterial);
-  rightLeg.position.set(0.3, -0.5, 0);
-  rightLeg.castShadow = true;
-  group.add(rightLeg);
-
-  // 头盔（半球体）
-  const helmetGeometry = new THREE.SphereGeometry(
-    0.45,
-    8,
-    6,
-    0,
-    Math.PI * 2,
-    0,
-    Math.PI / 2
-  );
-  const helmetMaterial = new THREE.MeshLambertMaterial({
-    color: 0xffffff,
-    transparent: true,
-    opacity: 0.4, // 稍微增加透明度
-  });
-  const helmet = new THREE.Mesh(helmetGeometry, helmetMaterial);
-  helmet.position.y = 1.8;
-  helmet.castShadow = true;
-  group.add(helmet);
-
-  astronaut = group;
-  astronaut.position.set(0, 50, 100); // 设置备用宇航员初始位置：在太阳系中心上方50单位，前方100单位
-  astronaut.rotation.y = Math.PI; // 旋转180度，让面部朝向W方向（前方）
-  astronaut.renderOrder = 0; // 设置备用模型优先渲染
-  scene.add(astronaut);
 }
 
 // 初始化控制器
