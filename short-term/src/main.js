@@ -932,7 +932,6 @@ function updateThirdPersonTarget() {
   }
 }
 
-
 // 锁定指针（用于第一人称视角）
 function lockPointer() {
   if (isFirstPerson && firstPersonControls) {
@@ -1602,7 +1601,6 @@ function toggleEducationMode() {
   if (hint) {
     hint.style.display = isEducationMode ? "block" : "none";
   }
-
 }
 
 // 创建UI
