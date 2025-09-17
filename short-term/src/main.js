@@ -26,6 +26,10 @@ let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
 let planetModels = {}; // 存储行星模型引用
 
+// 科普模式相机控制变量
+let cameraSpeed = 50; // 相机移动速度
+let cameraMoveVector = new THREE.Vector3(); // 相机移动向量
+
 // 检测是否为移动设备
 function detectMobile() {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -480,6 +484,54 @@ function updateSolarSystemAnimation(delta) {
   }
   if (models.neptune) {
     models.neptune.rotation.y += 0.032; // 自转速度
+  }
+}
+
+// 更新科普模式相机移动
+function updateEducationModeCamera(delta) {
+  if (!isEducationMode) return;
+
+  // 重置移动向量
+  cameraMoveVector.set(0, 0, 0);
+
+  // 获取相机的当前方向
+  const direction = new THREE.Vector3();
+  camera.getWorldDirection(direction);
+
+  // 计算右侧方向（垂直于相机方向和上方向）
+  const right = new THREE.Vector3();
+  right.crossVectors(direction, new THREE.Vector3(0, 1, 0)).normalize();
+
+  // W/S键：前后移动
+  if (keys.forward) {
+    cameraMoveVector.add(direction.clone().multiplyScalar(cameraSpeed * delta));
+  }
+  if (keys.backward) {
+    cameraMoveVector.add(direction.clone().multiplyScalar(-cameraSpeed * delta));
+  }
+
+  // A/D键：左右移动
+  if (keys.left) {
+    cameraMoveVector.add(right.clone().multiplyScalar(-cameraSpeed * delta));
+  }
+  if (keys.right) {
+    cameraMoveVector.add(right.clone().multiplyScalar(cameraSpeed * delta));
+  }
+
+  // 空格/X键：上下移动
+  if (keys.up) {
+    cameraMoveVector.y += cameraSpeed * delta;
+  }
+  if (keys.down) {
+    cameraMoveVector.y -= cameraSpeed * delta;
+  }
+
+  // 应用相机移动
+  camera.position.add(cameraMoveVector);
+
+  // 更新控制器目标点（如果存在）
+  if (thirdPersonControls) {
+    thirdPersonControls.target.add(cameraMoveVector);
   }
 }
 
@@ -966,21 +1018,28 @@ function animate() {
   // 更新宇航员移动
   updateAstronautMovement();
 
+  // 更新科普模式相机移动
+  updateEducationModeCamera(delta);
+
   // 更新太阳系动画
   updateSolarSystemAnimation(delta);
 
-  // 更新相机位置和目标（始终跟随宇航员移动）
-  updateFirstPersonCamera();
-  updateThirdPersonTarget();
+  // 更新相机位置和目标（科普模式下不跟随宇航员）
+  if (!isEducationMode) {
+    updateFirstPersonCamera();
+    updateThirdPersonTarget();
+  }
 
-  // 更新控制器
-  if (isFirstPerson && firstPersonControls) {
-    // 第一人称模式：PointerLockControls 自动处理鼠标输入
-    // 相机位置已经通过 updateFirstPersonCamera 跟随宇航员
-  } else if (!isFirstPerson && thirdPersonControls) {
-    // 第三人称模式：更新轨道控制器
-    // 相机位置由用户控制（滚轮缩放、鼠标拖拽），目标点跟随宇航员
-    thirdPersonControls.update();
+  // 更新控制器（科普模式下禁用控制器）
+  if (!isEducationMode) {
+    if (isFirstPerson && firstPersonControls) {
+      // 第一人称模式：PointerLockControls 自动处理鼠标输入
+      // 相机位置已经通过 updateFirstPersonCamera 跟随宇航员
+    } else if (!isFirstPerson && thirdPersonControls) {
+      // 第三人称模式：更新轨道控制器
+      // 相机位置由用户控制（滚轮缩放、鼠标拖拽），目标点跟随宇航员
+      thirdPersonControls.update();
+    }
   }
 
   renderer.render(scene, camera);
@@ -1302,14 +1361,17 @@ function onMouseClick(event) {
     // 找到包含用户数据的父对象
     let parent = clickedObject;
     let foundPlanet = null;
-    
+
     // 向上遍历父对象，寻找包含正确用户数据的对象
     while (parent) {
       console.log("检查父对象:", parent.name, parent.userData);
-      
+
       // 检查是否有用户数据且名称是中文（我们的行星名称）
-      if (parent.userData && parent.userData.name && 
-          /[\u4e00-\u9fa5]/.test(parent.userData.name)) {
+      if (
+        parent.userData &&
+        parent.userData.name &&
+        /[\u4e00-\u9fa5]/.test(parent.userData.name)
+      ) {
         foundPlanet = parent;
         break;
       }
@@ -1325,35 +1387,44 @@ function onMouseClick(event) {
       console.log("未找到行星用户数据");
       console.log("点击对象的完整结构:", clickedObject);
       console.log("遍历路径:", clickedObject.name);
-      
+
       // 尝试通过模型名称映射找到对应的行星
       const modelName = clickedObject.name;
       let planetName = null;
-      
+
       // 根据模型名称推断行星
-      if (modelName.includes('sun') || modelName.includes('Sun')) {
-        planetName = '太阳';
-      } else if (modelName.includes('mercury') || modelName.includes('Mercury')) {
-        planetName = '水星';
-      } else if (modelName.includes('venus') || modelName.includes('Venus')) {
-        planetName = '金星';
-      } else if (modelName.includes('earth') || modelName.includes('Earth')) {
-        planetName = '地球';
-      } else if (modelName.includes('mars') || modelName.includes('Mars')) {
-        planetName = '火星';
-      } else if (modelName.includes('jupiter') || modelName.includes('Jupiter')) {
-        planetName = '木星';
-      } else if (modelName.includes('saturn') || modelName.includes('Saturn')) {
-        planetName = '土星';
-      } else if (modelName.includes('uranus') || modelName.includes('Uranus')) {
-        planetName = '天王星';
-      } else if (modelName.includes('neptune') || modelName.includes('Neptune')) {
-        planetName = '海王星';
+      if (modelName.includes("sun") || modelName.includes("Sun")) {
+        planetName = "太阳";
+      } else if (
+        modelName.includes("mercury") ||
+        modelName.includes("Mercury")
+      ) {
+        planetName = "水星";
+      } else if (modelName.includes("venus") || modelName.includes("Venus")) {
+        planetName = "金星";
+      } else if (modelName.includes("earth") || modelName.includes("Earth")) {
+        planetName = "地球";
+      } else if (modelName.includes("mars") || modelName.includes("Mars")) {
+        planetName = "火星";
+      } else if (
+        modelName.includes("jupiter") ||
+        modelName.includes("Jupiter")
+      ) {
+        planetName = "木星";
+      } else if (modelName.includes("saturn") || modelName.includes("Saturn")) {
+        planetName = "土星";
+      } else if (modelName.includes("uranus") || modelName.includes("Uranus")) {
+        planetName = "天王星";
+      } else if (
+        modelName.includes("neptune") ||
+        modelName.includes("Neptune")
+      ) {
+        planetName = "海王星";
       }
-      
+
       if (planetName) {
         console.log("通过模型名称推断行星:", planetName);
-        showPlanetModal(planetName, 'planet');
+        showPlanetModal(planetName, "planet");
       }
     }
   } else {
@@ -1639,6 +1710,7 @@ function createUI() {
       <p>垂直移动：点击右下角上浮/下沉按钮</p>
       <p>视角切换：点击切换视角按钮</p>
       <p>聚焦功能：点击聚焦宇航员按钮</p>
+      <p>科普模式：点击行星查看信息，WASD控制相机</p>
     `;
 
     // 创建移动端控制元素
@@ -1651,6 +1723,7 @@ function createUI() {
       <p>第一人称模式：点击屏幕锁定鼠标，移动鼠标控制视角，ESC解锁</p>
       <p>垂直移动：空格键上浮，X键下沉（仅限宇航员模型）</p>
       <p>聚焦功能：点击聚焦宇航员按钮快速定位相机</p>
+      <p>科普模式：点击行星查看信息，WASD控制相机移动</p>
     `;
   }
 
@@ -1665,7 +1738,7 @@ function createUI() {
   const educationHint = document.createElement("div");
   educationHint.id = "educationHint";
   educationHint.className = "education-hint";
-  educationHint.innerHTML = "科普模式已开启：点击行星查看详细信息";
+  educationHint.innerHTML = "科普模式已开启：点击行星查看详细信息<br/>WASD键控制相机移动，空格/X键上下移动";
   educationHint.style.display = "none";
 
   uiContainer.appendChild(toggleButton);
