@@ -190,8 +190,22 @@ function loadAstronaut() {
       }
     },
     (error) => {
-      loadingDiv.textContent = "模型加载失败，请检查文件路径";
+      console.error("宇航员模型加载失败:", error);
+      loadingDiv.textContent = "宇航员模型加载失败，可能是文件过大或网络问题";
       loadingDiv.style.color = "#ff6b6b";
+
+      // 显示详细错误信息
+      setTimeout(() => {
+        loadingDiv.innerHTML = `
+          <div style="text-align: center;">
+            <p>宇航员模型加载失败</p>
+            <p style="font-size: 12px; color: #999;">错误: ${
+              error.message || "未知错误"
+            }</p>
+            <p style="font-size: 12px; color: #999;">请刷新页面重试</p>
+          </div>
+        `;
+      }, 2000);
     }
   );
 }
