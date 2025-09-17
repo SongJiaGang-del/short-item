@@ -507,7 +507,9 @@ function updateEducationModeCamera(delta) {
     cameraMoveVector.add(direction.clone().multiplyScalar(cameraSpeed * delta));
   }
   if (keys.backward) {
-    cameraMoveVector.add(direction.clone().multiplyScalar(-cameraSpeed * delta));
+    cameraMoveVector.add(
+      direction.clone().multiplyScalar(-cameraSpeed * delta)
+    );
   }
 
   // A/D键：左右移动
@@ -1738,7 +1740,8 @@ function createUI() {
   const educationHint = document.createElement("div");
   educationHint.id = "educationHint";
   educationHint.className = "education-hint";
-  educationHint.innerHTML = "科普模式已开启：点击行星查看详细信息<br/>WASD键控制相机移动，空格/X键上下移动";
+  educationHint.innerHTML =
+    "科普模式已开启：点击行星查看详细信息<br/>WASD键控制相机移动，空格/X键上下移动";
   educationHint.style.display = "none";
 
   uiContainer.appendChild(toggleButton);
