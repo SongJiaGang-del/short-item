@@ -293,6 +293,7 @@ function loadSolarSystem() {
     sunModel.userData = { name: "太阳", type: "star" }; // 添加用户数据
     scene.add(sunModel);
     planetModels.sun = sunModel; // 存储引用
+    console.log("太阳模型加载完成:", sunModel);
   });
 
   // 加载水星
@@ -303,6 +304,7 @@ function loadSolarSystem() {
     mercuryModel.userData = { name: "水星", type: "planet" }; // 添加用户数据
     mercuryRotationGroup.add(mercuryModel);
     planetModels.mercury = mercuryModel; // 存储引用
+    console.log("水星模型加载完成:", mercuryModel);
   });
 
   // 加载金星
@@ -313,6 +315,7 @@ function loadSolarSystem() {
     venusModel.userData = { name: "金星", type: "planet" }; // 添加用户数据
     venusRotationGroup.add(venusModel);
     planetModels.venus = venusModel; // 存储引用
+    console.log("金星模型加载完成:", venusModel);
   });
 
   // 加载地球
@@ -323,6 +326,7 @@ function loadSolarSystem() {
     earthModel.userData = { name: "地球", type: "planet" }; // 添加用户数据
     earthRotationGroup.add(earthModel);
     planetModels.earth = earthModel; // 存储引用
+    console.log("地球模型加载完成:", earthModel);
   });
 
   // 加载火星
@@ -1262,22 +1266,53 @@ function onMouseClick(event) {
   raycaster.setFromCamera(mouse, camera);
 
   // 获取所有可点击的对象（行星和太阳）
-  const clickableObjects = Object.values(planetModels).filter(model => model);
+  const clickableObjects = Object.values(planetModels).filter((model) => model);
   
-  // 检测射线与对象的交点
+  console.log("可点击对象数量:", clickableObjects.length);
+  console.log("行星模型:", planetModels);
+
+  // 检测射线与对象的交点（包括子对象）
   const intersects = raycaster.intersectObjects(clickableObjects, true);
+  
+  // 如果直接检测失败，尝试检测整个场景
+  if (intersects.length === 0) {
+    const sceneIntersects = raycaster.intersectObjects(scene.children, true);
+    console.log("场景检测结果:", sceneIntersects.length);
+    
+    // 在场景检测结果中查找行星
+    for (const intersect of sceneIntersects) {
+      let obj = intersect.object;
+      while (obj && !obj.userData.name) {
+        obj = obj.parent;
+      }
+      if (obj && obj.userData.name) {
+        console.log("通过场景检测找到行星:", obj.userData.name);
+        showPlanetModal(obj.userData.name, obj.userData.type);
+        return;
+      }
+    }
+  }
+  
+  console.log("射线交点数量:", intersects.length);
 
   if (intersects.length > 0) {
     const clickedObject = intersects[0].object;
+    console.log("点击的对象:", clickedObject);
+    
     // 找到包含用户数据的父对象
     let parent = clickedObject;
     while (parent && !parent.userData.name) {
       parent = parent.parent;
     }
-    
+
     if (parent && parent.userData.name) {
+      console.log("找到行星:", parent.userData.name);
       showPlanetModal(parent.userData.name, parent.userData.type);
+    } else {
+      console.log("未找到行星用户数据");
     }
+  } else {
+    console.log("没有检测到点击");
   }
 }
 
@@ -1292,11 +1327,11 @@ const planetInfo = {
       "直径：1,392,700 公里（地球的109倍）",
       "表面温度：5,778 K（约5,505°C）",
       "年龄：约46亿年",
-      "组成：73%氢，25%氦，2%其他元素"
+      "组成：73%氢，25%氦，2%其他元素",
     ],
     distance: "0 天文单位（中心）",
     orbitalPeriod: "无（中心天体）",
-    dayLength: "25-35天（不同纬度）"
+    dayLength: "25-35天（不同纬度）",
   },
   水星: {
     name: "水星",
@@ -1307,11 +1342,11 @@ const planetInfo = {
       "直径：4,879 公里",
       "表面温度：-173°C 到 427°C",
       "大气：极其稀薄",
-      "特点：没有天然卫星"
+      "特点：没有天然卫星",
     ],
     distance: "0.39 天文单位",
     orbitalPeriod: "88 天",
-    dayLength: "59 天"
+    dayLength: "59 天",
   },
   金星: {
     name: "金星",
@@ -1322,11 +1357,11 @@ const planetInfo = {
       "直径：12,104 公里",
       "表面温度：462°C",
       "大气：96.5%二氧化碳",
-      "特点：逆向自转"
+      "特点：逆向自转",
     ],
     distance: "0.72 天文单位",
     orbitalPeriod: "225 天",
-    dayLength: "243 天"
+    dayLength: "243 天",
   },
   地球: {
     name: "地球",
@@ -1337,11 +1372,11 @@ const planetInfo = {
       "直径：12,756 公里",
       "表面温度：-89°C 到 58°C",
       "大气：78%氮气，21%氧气",
-      "特点：唯一已知存在生命的行星"
+      "特点：唯一已知存在生命的行星",
     ],
     distance: "1.00 天文单位",
     orbitalPeriod: "365.25 天",
-    dayLength: "24 小时"
+    dayLength: "24 小时",
   },
   火星: {
     name: "火星",
@@ -1352,11 +1387,11 @@ const planetInfo = {
       "直径：6,792 公里",
       "表面温度：-87°C 到 -5°C",
       "大气：95%二氧化碳",
-      "特点：有两颗小卫星"
+      "特点：有两颗小卫星",
     ],
     distance: "1.52 天文单位",
     orbitalPeriod: "687 天",
-    dayLength: "24.6 小时"
+    dayLength: "24.6 小时",
   },
   木星: {
     name: "木星",
@@ -1367,11 +1402,11 @@ const planetInfo = {
       "直径：142,984 公里",
       "大气：90%氢，10%氦",
       "特点：有79颗已知卫星",
-      "大红斑：持续数百年的巨大风暴"
+      "大红斑：持续数百年的巨大风暴",
     ],
     distance: "5.20 天文单位",
     orbitalPeriod: "12 年",
-    dayLength: "9.9 小时"
+    dayLength: "9.9 小时",
   },
   土星: {
     name: "土星",
@@ -1382,11 +1417,11 @@ const planetInfo = {
       "直径：120,536 公里",
       "大气：96%氢，3%氦",
       "特点：有82颗已知卫星",
-      "光环：主要由冰和岩石碎片组成"
+      "光环：主要由冰和岩石碎片组成",
     ],
     distance: "9.58 天文单位",
     orbitalPeriod: "29 年",
-    dayLength: "10.7 小时"
+    dayLength: "10.7 小时",
   },
   天王星: {
     name: "天王星",
@@ -1397,11 +1432,11 @@ const planetInfo = {
       "直径：51,118 公里",
       "大气：83%氢，15%氦，2%甲烷",
       "特点：有27颗已知卫星",
-      "自转轴：倾斜98度"
+      "自转轴：倾斜98度",
     ],
     distance: "19.22 天文单位",
     orbitalPeriod: "84 年",
-    dayLength: "17.2 小时"
+    dayLength: "17.2 小时",
   },
   海王星: {
     name: "海王星",
@@ -1412,12 +1447,12 @@ const planetInfo = {
       "直径：49,528 公里",
       "大气：80%氢，19%氦，1%甲烷",
       "特点：有14颗已知卫星",
-      "风速：高达2,100公里/小时"
+      "风速：高达2,100公里/小时",
     ],
     distance: "30.07 天文单位",
     orbitalPeriod: "165 年",
-    dayLength: "16.1 小时"
-  }
+    dayLength: "16.1 小时",
+  },
 };
 
 // 显示行星信息模态框
@@ -1440,7 +1475,7 @@ function showPlanetModal(planetName, planetType) {
         <div class="facts-section">
           <h3>基本信息</h3>
           <ul>
-            ${info.facts.map(fact => `<li>${fact}</li>`).join('')}
+            ${info.facts.map((fact) => `<li>${fact}</li>`).join("")}
           </ul>
         </div>
         <div class="orbital-info">
@@ -1459,13 +1494,13 @@ function showPlanetModal(planetName, planetType) {
   `;
 
   // 添加关闭事件
-  const closeBtn = modal.querySelector('.close-btn');
-  closeBtn.addEventListener('click', () => {
+  const closeBtn = modal.querySelector(".close-btn");
+  closeBtn.addEventListener("click", () => {
     document.body.removeChild(modal);
   });
 
   // 点击背景关闭
-  modal.addEventListener('click', (e) => {
+  modal.addEventListener("click", (e) => {
     if (e.target === modal) {
       document.body.removeChild(modal);
     }
@@ -1478,21 +1513,30 @@ function showPlanetModal(planetName, planetType) {
 // 切换科普模式
 function toggleEducationMode() {
   isEducationMode = !isEducationMode;
-  
+
   // 更新按钮文本
-  const eduButton = document.getElementById('educationModeButton');
+  const eduButton = document.getElementById("educationModeButton");
   if (eduButton) {
-    eduButton.textContent = isEducationMode ? '退出科普模式' : '科普模式';
-    eduButton.className = isEducationMode ? 'edu-button active' : 'edu-button';
+    eduButton.textContent = isEducationMode ? "退出科普模式" : "科普模式";
+    eduButton.className = isEducationMode ? "edu-button active" : "edu-button";
   }
 
   // 显示/隐藏提示
-  const hint = document.getElementById('educationHint');
+  const hint = document.getElementById("educationHint");
   if (hint) {
-    hint.style.display = isEducationMode ? 'block' : 'none';
+    hint.style.display = isEducationMode ? "block" : "none";
   }
 
-  console.log(`科普模式${isEducationMode ? '已开启' : '已关闭'}`);
+  console.log(`科普模式${isEducationMode ? "已开启" : "已关闭"}`);
+  
+  // 调试：显示所有行星模型状态
+  if (isEducationMode) {
+    console.log("=== 行星模型状态 ===");
+    Object.keys(planetModels).forEach(key => {
+      const model = planetModels[key];
+      console.log(`${key}:`, model ? "已加载" : "未加载", model);
+    });
+  }
 }
 
 // 创建UI
