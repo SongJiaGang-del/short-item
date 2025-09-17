@@ -143,9 +143,9 @@ function loadAstronaut() {
 
   // 尝试多个可能的路径
   const modelPaths = [
-    "/模型存放点/astronaut/scene.gltf",
     "./模型存放点/astronaut/scene.gltf",
-    "/astronaut/scene.gltf",
+    "/模型存放点/astronaut/scene.gltf",
+    "./astronaut/scene.gltf",
   ];
 
   let currentPathIndex = 0;
@@ -277,7 +277,7 @@ function loadSolarSystem() {
   scene.add(createOrbit(1250)); // 海王星轨道（5倍）
 
   // 加载太阳
-  loader.load("/model/sun/scene.gltf", (gltf) => {
+  loader.load("./model/sun/scene.gltf", (gltf) => {
     sunModel = gltf.scene;
     sunModel.scale.set(1.0, 1.0, 1.0); // 增大太阳尺寸
     sunModel.position.set(0, 0, 0);
@@ -285,7 +285,7 @@ function loadSolarSystem() {
   });
 
   // 加载水星
-  loader.load("/model/mercury/scene.gltf", (gltf) => {
+  loader.load("./model/mercury/scene.gltf", (gltf) => {
     mercuryModel = gltf.scene;
     mercuryModel.scale.set(3, 3, 3); // 增大水星尺寸
     mercuryModel.position.set(30, 0, 0); // 更新位置到新轨道半径
@@ -293,7 +293,7 @@ function loadSolarSystem() {
   });
 
   // 加载金星
-  loader.load("/model/venus/scene.gltf", (gltf) => {
+  loader.load("./model/venus/scene.gltf", (gltf) => {
     venusModel = gltf.scene;
     venusModel.scale.set(6, 6, 6); // 增大金星尺寸
     venusModel.position.set(50, 0, 0); // 更新位置到新轨道半径
@@ -301,7 +301,7 @@ function loadSolarSystem() {
   });
 
   // 加载地球
-  loader.load("/model/earth/scene.gltf", (gltf) => {
+  loader.load("./model/earth/scene.gltf", (gltf) => {
     earthModel = gltf.scene;
     earthModel.scale.set(60, 60, 60); // 增大地球尺寸
     earthModel.position.set(75, 0, 0); // 更新位置到新轨道半径
@@ -309,7 +309,7 @@ function loadSolarSystem() {
   });
 
   // 加载火星
-  loader.load("/model/mars/scene.gltf", (gltf) => {
+  loader.load("./model/mars/scene.gltf", (gltf) => {
     marsModel = gltf.scene;
     marsModel.scale.set(9, 9, 9); // 增大火星尺寸
     marsModel.position.set(125, 0, 0); // 更新位置到新轨道半径
@@ -317,7 +317,7 @@ function loadSolarSystem() {
   });
 
   // 加载木星
-  loader.load("/model/jupiter/scene.gltf", (gltf) => {
+  loader.load("./model/jupiter/scene.gltf", (gltf) => {
     jupiterModel = gltf.scene;
     jupiterModel.scale.set(15, 15, 15); // 增大木星尺寸
     jupiterModel.position.set(350, 0, 0); // 更新位置到新轨道半径
@@ -325,7 +325,7 @@ function loadSolarSystem() {
   });
 
   // 加载土星
-  loader.load("/model/saturn/scene.gltf", (gltf) => {
+  loader.load("./model/saturn/scene.gltf", (gltf) => {
     saturnModel = gltf.scene;
     saturnModel.scale.set(0.3, 0.3, 0.3); // 增大土星尺寸
     saturnModel.position.set(600, 0, 0); // 更新位置到新轨道半径
@@ -333,7 +333,7 @@ function loadSolarSystem() {
   });
 
   // 加载天王星
-  loader.load("/model/uranus/scene.gltf", (gltf) => {
+  loader.load("./model/uranus/scene.gltf", (gltf) => {
     uranusModel = gltf.scene;
     uranusModel.scale.set(0.3, 0.3, 0.3); // 增大天王星尺寸
     uranusModel.position.set(900, 0, 0); // 更新位置到新轨道半径
@@ -342,7 +342,7 @@ function loadSolarSystem() {
   });
 
   // 加载海王星
-  loader.load("/model/neptune/scene.gltf", (gltf) => {
+  loader.load("./model/neptune/scene.gltf", (gltf) => {
     neptuneModel = gltf.scene;
     neptuneModel.scale.set(3, 3, 3); // 增大海王星尺寸
     neptuneModel.position.set(1250, 0, 0); // 更新位置到新轨道半径
