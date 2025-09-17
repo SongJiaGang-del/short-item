@@ -86,6 +86,41 @@ canvas:active {
   transform: translateY(0);
 }
 
+/* 科普模式按钮样式 */
+.edu-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(45deg, #FF9800, #F57C00);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+  transition: all 0.3s ease;
+  margin-bottom: 15px;
+}
+
+.edu-button:hover {
+  background: linear-gradient(45deg, #F57C00, #FF9800);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 152, 0, 0.4);
+}
+
+.edu-button:active {
+  transform: translateY(0);
+}
+
+.edu-button.active {
+  background: linear-gradient(45deg, #4CAF50, #45a049);
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+}
+
+.edu-button.active:hover {
+  background: linear-gradient(45deg, #45a049, #4CAF50);
+  box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+}
+
 .instructions {
   color: white;
   font-size: 14px;
@@ -137,6 +172,200 @@ canvas:active {
   0% { opacity: 1; }
   50% { opacity: 0.7; }
   100% { opacity: 1; }
+}
+
+/* 科普模式提示样式 */
+.education-hint {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  z-index: 1001;
+  border: 2px solid #FF9800;
+  animation: pulse 2s infinite;
+}
+
+/* 行星信息模态框样式 */
+.planet-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-radius: 15px;
+  max-width: 600px;
+  max-height: 80vh;
+  width: 90%;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 25px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(45deg, #FF9800, #F57C00);
+  border-radius: 15px 15px 0 0;
+}
+
+.modal-header h2 {
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.close-btn {
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  line-height: 1;
+  transition: opacity 0.3s ease;
+}
+
+.close-btn:hover {
+  opacity: 0.7;
+}
+
+.modal-body {
+  padding: 25px;
+  color: white;
+}
+
+.planet-type {
+  display: inline-block;
+  background: rgba(255, 152, 0, 0.2);
+  color: #FF9800;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  border: 1px solid rgba(255, 152, 0, 0.3);
+}
+
+.description {
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  color: #e0e0e0;
+}
+
+.facts-section {
+  margin-bottom: 20px;
+}
+
+.facts-section h3 {
+  color: #FF9800;
+  font-size: 18px;
+  margin-bottom: 15px;
+  border-bottom: 2px solid rgba(255, 152, 0, 0.3);
+  padding-bottom: 5px;
+}
+
+.facts-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.facts-section li {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 10px 15px;
+  margin-bottom: 8px;
+  border-radius: 8px;
+  border-left: 4px solid #FF9800;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.facts-section li:last-child {
+  margin-bottom: 0;
+}
+
+.orbital-info {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item {
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item strong {
+  color: #FF9800;
+}
+
+/* 移动端模态框优化 */
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    max-height: 85vh;
+  }
+  
+  .modal-header {
+    padding: 15px 20px;
+  }
+  
+  .modal-header h2 {
+    font-size: 20px;
+  }
+  
+  .close-btn {
+    font-size: 24px;
+  }
+  
+  .modal-body {
+    padding: 20px;
+  }
+  
+  .description {
+    font-size: 14px;
+  }
+  
+  .facts-section h3 {
+    font-size: 16px;
+  }
+  
+  .facts-section li {
+    font-size: 13px;
+    padding: 8px 12px;
+  }
+  
+  .orbital-info {
+    padding: 15px;
+  }
+  
+  .info-item {
+    font-size: 13px;
+  }
 }
 
 /* 移动端摇杆样式 */
@@ -247,6 +476,11 @@ canvas:active {
   }
   
   .focus-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+  
+  .edu-button {
     padding: 8px 16px;
     font-size: 12px;
   }

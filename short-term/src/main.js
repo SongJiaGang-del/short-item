@@ -20,6 +20,12 @@ let joystickCenter = { x: 0, y: 0 };
 let joystickPosition = { x: 0, y: 0 };
 let joystickRadius = 50;
 
+// 科普模式相关变量
+let isEducationMode = false;
+let raycaster = new THREE.Raycaster();
+let mouse = new THREE.Vector2();
+let planetModels = {}; // 存储行星模型引用
+
 // 检测是否为移动设备
 function detectMobile() {
   const userAgent = navigator.userAgent || navigator.vendor || window.opera;
@@ -126,6 +132,9 @@ function init() {
     camera.updateProjectionMatrix();
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
+
+  // 添加鼠标点击事件监听器（用于科普模式）
+  renderer.domElement.addEventListener("click", onMouseClick);
 
   // 开始渲染循环
   animate();
@@ -281,7 +290,9 @@ function loadSolarSystem() {
     sunModel = gltf.scene;
     sunModel.scale.set(1.0, 1.0, 1.0); // 增大太阳尺寸
     sunModel.position.set(0, 0, 0);
+    sunModel.userData = { name: "太阳", type: "star" }; // 添加用户数据
     scene.add(sunModel);
+    planetModels.sun = sunModel; // 存储引用
   });
 
   // 加载水星
@@ -289,7 +300,9 @@ function loadSolarSystem() {
     mercuryModel = gltf.scene;
     mercuryModel.scale.set(3, 3, 3); // 增大水星尺寸
     mercuryModel.position.set(30, 0, 0); // 更新位置到新轨道半径
+    mercuryModel.userData = { name: "水星", type: "planet" }; // 添加用户数据
     mercuryRotationGroup.add(mercuryModel);
+    planetModels.mercury = mercuryModel; // 存储引用
   });
 
   // 加载金星
@@ -297,7 +310,9 @@ function loadSolarSystem() {
     venusModel = gltf.scene;
     venusModel.scale.set(6, 6, 6); // 增大金星尺寸
     venusModel.position.set(50, 0, 0); // 更新位置到新轨道半径
+    venusModel.userData = { name: "金星", type: "planet" }; // 添加用户数据
     venusRotationGroup.add(venusModel);
+    planetModels.venus = venusModel; // 存储引用
   });
 
   // 加载地球
@@ -305,7 +320,9 @@ function loadSolarSystem() {
     earthModel = gltf.scene;
     earthModel.scale.set(60, 60, 60); // 增大地球尺寸
     earthModel.position.set(75, 0, 0); // 更新位置到新轨道半径
+    earthModel.userData = { name: "地球", type: "planet" }; // 添加用户数据
     earthRotationGroup.add(earthModel);
+    planetModels.earth = earthModel; // 存储引用
   });
 
   // 加载火星
@@ -313,7 +330,9 @@ function loadSolarSystem() {
     marsModel = gltf.scene;
     marsModel.scale.set(9, 9, 9); // 增大火星尺寸
     marsModel.position.set(125, 0, 0); // 更新位置到新轨道半径
+    marsModel.userData = { name: "火星", type: "planet" }; // 添加用户数据
     marsRotationGroup.add(marsModel);
+    planetModels.mars = marsModel; // 存储引用
   });
 
   // 加载木星
@@ -321,7 +340,9 @@ function loadSolarSystem() {
     jupiterModel = gltf.scene;
     jupiterModel.scale.set(15, 15, 15); // 增大木星尺寸
     jupiterModel.position.set(350, 0, 0); // 更新位置到新轨道半径
+    jupiterModel.userData = { name: "木星", type: "planet" }; // 添加用户数据
     jupiterRotationGroup.add(jupiterModel);
+    planetModels.jupiter = jupiterModel; // 存储引用
   });
 
   // 加载土星
@@ -329,7 +350,9 @@ function loadSolarSystem() {
     saturnModel = gltf.scene;
     saturnModel.scale.set(0.3, 0.3, 0.3); // 增大土星尺寸
     saturnModel.position.set(600, 0, 0); // 更新位置到新轨道半径
+    saturnModel.userData = { name: "土星", type: "planet" }; // 添加用户数据
     saturnRotationGroup.add(saturnModel);
+    planetModels.saturn = saturnModel; // 存储引用
   });
 
   // 加载天王星
@@ -338,7 +361,9 @@ function loadSolarSystem() {
     uranusModel.scale.set(0.3, 0.3, 0.3); // 增大天王星尺寸
     uranusModel.position.set(900, 0, 0); // 更新位置到新轨道半径
     uranusModel.rotation.x = Math.PI / 2.05; // 98度倾斜
+    uranusModel.userData = { name: "天王星", type: "planet" }; // 添加用户数据
     uranusRotationGroup.add(uranusModel);
+    planetModels.uranus = uranusModel; // 存储引用
   });
 
   // 加载海王星
@@ -347,7 +372,9 @@ function loadSolarSystem() {
     neptuneModel.scale.set(3, 3, 3); // 增大海王星尺寸
     neptuneModel.position.set(1250, 0, 0); // 更新位置到新轨道半径
     neptuneModel.rotation.x = Math.PI / 6.3; // 28.3度倾斜
+    neptuneModel.userData = { name: "海王星", type: "planet" }; // 添加用户数据
     neptuneRotationGroup.add(neptuneModel);
+    planetModels.neptune = neptuneModel; // 存储引用
   });
 
   // 将太阳系模型变量存储到全局，供动画使用
@@ -454,7 +481,7 @@ function updateSolarSystemAnimation(delta) {
 
 // 更新宇航员移动
 function updateAstronautMovement() {
-  if (!astronaut) return;
+  if (!astronaut || isEducationMode) return; // 科普模式下禁用宇航员移动
 
   // 重置速度
   astronautVelocity.set(0, 0, 0);
@@ -1223,6 +1250,251 @@ function createMobileJumpButton() {
   document.body.appendChild(thrustDownButton);
 }
 
+// 鼠标点击处理函数
+function onMouseClick(event) {
+  if (!isEducationMode) return; // 只在科普模式下处理点击
+
+  // 计算鼠标位置
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+  // 更新射线投射器
+  raycaster.setFromCamera(mouse, camera);
+
+  // 获取所有可点击的对象（行星和太阳）
+  const clickableObjects = Object.values(planetModels).filter(model => model);
+  
+  // 检测射线与对象的交点
+  const intersects = raycaster.intersectObjects(clickableObjects, true);
+
+  if (intersects.length > 0) {
+    const clickedObject = intersects[0].object;
+    // 找到包含用户数据的父对象
+    let parent = clickedObject;
+    while (parent && !parent.userData.name) {
+      parent = parent.parent;
+    }
+    
+    if (parent && parent.userData.name) {
+      showPlanetModal(parent.userData.name, parent.userData.type);
+    }
+  }
+}
+
+// 行星信息数据
+const planetInfo = {
+  太阳: {
+    name: "太阳",
+    type: "恒星",
+    description: "太阳是太阳系的中心恒星，是一颗G型主序星。",
+    facts: [
+      "质量：1.989 × 10³⁰ 千克（地球的33万倍）",
+      "直径：1,392,700 公里（地球的109倍）",
+      "表面温度：5,778 K（约5,505°C）",
+      "年龄：约46亿年",
+      "组成：73%氢，25%氦，2%其他元素"
+    ],
+    distance: "0 天文单位（中心）",
+    orbitalPeriod: "无（中心天体）",
+    dayLength: "25-35天（不同纬度）"
+  },
+  水星: {
+    name: "水星",
+    type: "类地行星",
+    description: "水星是距离太阳最近的行星，也是太阳系中最小的行星。",
+    facts: [
+      "质量：3.301 × 10²³ 千克",
+      "直径：4,879 公里",
+      "表面温度：-173°C 到 427°C",
+      "大气：极其稀薄",
+      "特点：没有天然卫星"
+    ],
+    distance: "0.39 天文单位",
+    orbitalPeriod: "88 天",
+    dayLength: "59 天"
+  },
+  金星: {
+    name: "金星",
+    type: "类地行星",
+    description: "金星是太阳系中最热的行星，被称为地球的'姐妹星'。",
+    facts: [
+      "质量：4.867 × 10²⁴ 千克",
+      "直径：12,104 公里",
+      "表面温度：462°C",
+      "大气：96.5%二氧化碳",
+      "特点：逆向自转"
+    ],
+    distance: "0.72 天文单位",
+    orbitalPeriod: "225 天",
+    dayLength: "243 天"
+  },
+  地球: {
+    name: "地球",
+    type: "类地行星",
+    description: "地球是我们居住的星球，是已知唯一存在生命的行星。",
+    facts: [
+      "质量：5.972 × 10²⁴ 千克",
+      "直径：12,756 公里",
+      "表面温度：-89°C 到 58°C",
+      "大气：78%氮气，21%氧气",
+      "特点：唯一已知存在生命的行星"
+    ],
+    distance: "1.00 天文单位",
+    orbitalPeriod: "365.25 天",
+    dayLength: "24 小时"
+  },
+  火星: {
+    name: "火星",
+    type: "类地行星",
+    description: "火星被称为'红色星球'，是未来人类殖民的主要候选地。",
+    facts: [
+      "质量：6.39 × 10²³ 千克",
+      "直径：6,792 公里",
+      "表面温度：-87°C 到 -5°C",
+      "大气：95%二氧化碳",
+      "特点：有两颗小卫星"
+    ],
+    distance: "1.52 天文单位",
+    orbitalPeriod: "687 天",
+    dayLength: "24.6 小时"
+  },
+  木星: {
+    name: "木星",
+    type: "气态巨行星",
+    description: "木星是太阳系中最大的行星，被称为'气体巨人'。",
+    facts: [
+      "质量：1.898 × 10²⁷ 千克（地球的318倍）",
+      "直径：142,984 公里",
+      "大气：90%氢，10%氦",
+      "特点：有79颗已知卫星",
+      "大红斑：持续数百年的巨大风暴"
+    ],
+    distance: "5.20 天文单位",
+    orbitalPeriod: "12 年",
+    dayLength: "9.9 小时"
+  },
+  土星: {
+    name: "土星",
+    type: "气态巨行星",
+    description: "土星以其美丽的光环系统而闻名，密度比水还小。",
+    facts: [
+      "质量：5.683 × 10²⁶ 千克",
+      "直径：120,536 公里",
+      "大气：96%氢，3%氦",
+      "特点：有82颗已知卫星",
+      "光环：主要由冰和岩石碎片组成"
+    ],
+    distance: "9.58 天文单位",
+    orbitalPeriod: "29 年",
+    dayLength: "10.7 小时"
+  },
+  天王星: {
+    name: "天王星",
+    type: "冰巨星",
+    description: "天王星是太阳系中唯一'躺着'自转的行星。",
+    facts: [
+      "质量：8.681 × 10²⁵ 千克",
+      "直径：51,118 公里",
+      "大气：83%氢，15%氦，2%甲烷",
+      "特点：有27颗已知卫星",
+      "自转轴：倾斜98度"
+    ],
+    distance: "19.22 天文单位",
+    orbitalPeriod: "84 年",
+    dayLength: "17.2 小时"
+  },
+  海王星: {
+    name: "海王星",
+    type: "冰巨星",
+    description: "海王星是太阳系中最远的行星，以其深蓝色和强风而闻名。",
+    facts: [
+      "质量：1.024 × 10²⁶ 千克",
+      "直径：49,528 公里",
+      "大气：80%氢，19%氦，1%甲烷",
+      "特点：有14颗已知卫星",
+      "风速：高达2,100公里/小时"
+    ],
+    distance: "30.07 天文单位",
+    orbitalPeriod: "165 年",
+    dayLength: "16.1 小时"
+  }
+};
+
+// 显示行星信息模态框
+function showPlanetModal(planetName, planetType) {
+  const info = planetInfo[planetName];
+  if (!info) return;
+
+  // 创建模态框
+  const modal = document.createElement("div");
+  modal.className = "planet-modal";
+  modal.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>${info.name}</h2>
+        <span class="close-btn">&times;</span>
+      </div>
+      <div class="modal-body">
+        <div class="planet-type">${info.type}</div>
+        <p class="description">${info.description}</p>
+        <div class="facts-section">
+          <h3>基本信息</h3>
+          <ul>
+            ${info.facts.map(fact => `<li>${fact}</li>`).join('')}
+          </ul>
+        </div>
+        <div class="orbital-info">
+          <div class="info-item">
+            <strong>距离太阳：</strong>${info.distance}
+          </div>
+          <div class="info-item">
+            <strong>公转周期：</strong>${info.orbitalPeriod}
+          </div>
+          <div class="info-item">
+            <strong>自转周期：</strong>${info.dayLength}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // 添加关闭事件
+  const closeBtn = modal.querySelector('.close-btn');
+  closeBtn.addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+
+  // 点击背景关闭
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  });
+
+  // 添加到页面
+  document.body.appendChild(modal);
+}
+
+// 切换科普模式
+function toggleEducationMode() {
+  isEducationMode = !isEducationMode;
+  
+  // 更新按钮文本
+  const eduButton = document.getElementById('educationModeButton');
+  if (eduButton) {
+    eduButton.textContent = isEducationMode ? '退出科普模式' : '科普模式';
+    eduButton.className = isEducationMode ? 'edu-button active' : 'edu-button';
+  }
+
+  // 显示/隐藏提示
+  const hint = document.getElementById('educationHint');
+  if (hint) {
+    hint.style.display = isEducationMode ? 'block' : 'none';
+  }
+
+  console.log(`科普模式${isEducationMode ? '已开启' : '已关闭'}`);
+}
+
 // 创建UI
 function createUI() {
   // 检测移动设备
@@ -1240,6 +1512,12 @@ function createUI() {
   focusButton.textContent = "聚焦宇航员";
   focusButton.className = "focus-button";
   focusButton.addEventListener("click", focusOnAstronaut);
+
+  const educationButton = document.createElement("button");
+  educationButton.id = "educationModeButton";
+  educationButton.textContent = "科普模式";
+  educationButton.className = "edu-button";
+  educationButton.addEventListener("click", toggleEducationMode);
 
   const instructions = document.createElement("div");
   instructions.className = "instructions";
@@ -1272,10 +1550,19 @@ function createUI() {
   firstPersonHint.innerHTML = "点击屏幕激活鼠标控制";
   firstPersonHint.style.display = "none";
 
+  // 创建科普模式提示
+  const educationHint = document.createElement("div");
+  educationHint.id = "educationHint";
+  educationHint.className = "education-hint";
+  educationHint.innerHTML = "科普模式已开启：点击行星查看详细信息";
+  educationHint.style.display = "none";
+
   uiContainer.appendChild(toggleButton);
   uiContainer.appendChild(focusButton);
+  uiContainer.appendChild(educationButton);
   uiContainer.appendChild(instructions);
   uiContainer.appendChild(firstPersonHint);
+  uiContainer.appendChild(educationHint);
   document.getElementById("app").appendChild(uiContainer);
 }
 
