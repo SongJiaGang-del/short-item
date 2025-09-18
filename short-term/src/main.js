@@ -18,7 +18,10 @@ let joystick = null;
 let joystickActive = false;
 let joystickCenter = { x: 0, y: 0 };
 let joystickPosition = { x: 0, y: 0 };
-let joystickRadius = 50;
+let joystickRadius = 60; // 增加摇杆活动半径，提升操控精度
+let joystickSensitivity = 1.2; // 摇杆灵敏度系数
+let touchStartTime = 0; // 记录触摸开始时间，用于检测点击
+let mobileFirstPersonTouch = null; // 移动端第一人称视角控制
 
 // 科普模式相关变量
 let isEducationMode = false;
@@ -155,7 +158,7 @@ function loadAstronaut() {
   document.getElementById("app").appendChild(loadingDiv);
 
   loader.load(
-    "./model/Astronaut/scene.gltf",
+    "./model/astronaut/scene.gltf",
     (gltf) => {
       astronaut = gltf.scene;
       astronaut.scale.set(1, 1, 1);
@@ -521,9 +524,9 @@ function updateAstronautMovement() {
 
   // 移动端摇杆控制
   if (isMobile && joystickActive) {
-    // 计算摇杆输入值（-1 到 1）
-    const inputX = joystickPosition.x / joystickRadius;
-    const inputY = -joystickPosition.y / joystickRadius; // 反转Y轴，向上为正
+    // 计算摇杆输入值（-1 到 1），应用灵敏度系数
+    const inputX = (joystickPosition.x / joystickRadius) * joystickSensitivity;
+    const inputY = (-joystickPosition.y / joystickRadius) * joystickSensitivity; // 反转Y轴，向上为正
 
     if (isFirstPerson) {
       // 第一人称模式：摇杆控制前进后退和左右移动，视角只能通过触摸控制
@@ -662,6 +665,11 @@ function initControls() {
 function setThirdPersonView() {
   isFirstPerson = false;
 
+  // 清理移动端第一人称触摸控制
+  if (isMobile) {
+    clearMobileFirstPersonTouch();
+  }
+
   // 断开第一人称控制器并解锁指针
   if (firstPersonControls) {
     firstPersonControls.disconnect();
@@ -706,11 +714,14 @@ function setFirstPersonView() {
   isFirstPerson = true;
   thirdPersonControls.enabled = false;
 
-  // 确保第一人称控制器正确连接
-  if (firstPersonControls) {
-    firstPersonControls.disconnect();
+  // 移动端不连接PointerLock控制
+  if (!isMobile) {
+    // 确保第一人称控制器正确连接
+    if (firstPersonControls) {
+      firstPersonControls.disconnect();
+    }
+    firstPersonControls.connect(renderer.domElement);
   }
-  firstPersonControls.connect(renderer.domElement);
 
   if (astronaut) {
     // 获取宇航员世界坐标
@@ -740,13 +751,30 @@ function setFirstPersonView() {
     camera.rotation.set(0, 0, 0);
   }
 
-  // 添加点击事件来锁定指针
-  renderer.domElement.addEventListener("click", lockPointer);
+  // 桌面端添加点击事件来锁定指针
+  if (!isMobile) {
+    renderer.domElement.addEventListener("click", lockPointer);
 
-  // 显示第一人称提示
-  const hint = document.getElementById("firstPersonHint");
-  if (hint) {
-    hint.style.display = "block";
+    // 显示第一人称提示
+    const hint = document.getElementById("firstPersonHint");
+    if (hint) {
+      hint.style.display = "block";
+    }
+  } else {
+    // 移动端设置触摸控制
+    setupMobileFirstPersonTouch();
+
+    // 显示移动端第一人称提示
+    const hint = document.getElementById("firstPersonHint");
+    if (hint) {
+      hint.style.display = "block";
+      // 3秒后自动隐藏提示
+      setTimeout(() => {
+        if (hint) {
+          hint.style.display = "none";
+        }
+      }, 3000);
+    }
   }
 }
 
@@ -851,6 +879,72 @@ function toggleView() {
     setThirdPersonView();
   } else {
     setFirstPersonView();
+  }
+}
+
+// 设置移动端第一人称触摸控制
+function setupMobileFirstPersonTouch() {
+  if (!isMobile || !isFirstPerson) return;
+
+  // 创建触摸控制区域（屏幕中央区域用于旋转视角）
+  const touchArea = document.createElement("div");
+  touchArea.id = "mobile-first-person-touch";
+  touchArea.style.position = "fixed";
+  touchArea.style.top = "100px";
+  touchArea.style.left = "0";
+  touchArea.style.right = "0";
+  touchArea.style.bottom = "200px";
+  touchArea.style.zIndex = "999";
+  touchArea.style.pointerEvents = "auto";
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let cameraRotationY = astronaut ? astronaut.rotation.y : 0;
+  let cameraRotationX = 0;
+
+  touchArea.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 1) {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  });
+
+  touchArea.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 1 && astronaut) {
+      e.preventDefault();
+      const deltaX = e.touches[0].clientX - touchStartX;
+      const deltaY = e.touches[0].clientY - touchStartY;
+
+      // 水平旋转（Y轴）
+      cameraRotationY -= deltaX * 0.005;
+      astronaut.rotation.y = cameraRotationY;
+
+      // 垂直旋转（限制范围）
+      cameraRotationX -= deltaY * 0.003;
+      cameraRotationX = Math.max(
+        -Math.PI / 3,
+        Math.min(Math.PI / 3, cameraRotationX)
+      );
+
+      // 更新相机朝向
+      if (camera) {
+        camera.rotation.x = cameraRotationX;
+      }
+
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    }
+  });
+
+  document.body.appendChild(touchArea);
+  mobileFirstPersonTouch = touchArea;
+}
+
+// 清理移动端第一人称触摸控制
+function clearMobileFirstPersonTouch() {
+  if (mobileFirstPersonTouch) {
+    mobileFirstPersonTouch.remove();
+    mobileFirstPersonTouch = null;
   }
 }
 
@@ -1025,10 +1119,10 @@ function createJoystick() {
   joystickBase.appendChild(joystickKnob);
   joystickContainer.appendChild(joystickBase);
 
-  // 设置摇杆位置（左下角）
+  // 设置摇杆位置（左下角，稍微远离屏幕边缘）
   joystickContainer.style.position = "fixed";
-  joystickContainer.style.left = "20px";
-  joystickContainer.style.bottom = "20px";
+  joystickContainer.style.left = "30px";
+  joystickContainer.style.bottom = "30px";
   joystickContainer.style.zIndex = "1000";
 
   document.body.appendChild(joystickContainer);
@@ -1069,13 +1163,21 @@ function setupJoystickEvents() {
 // 摇杆开始
 function handleJoystickStart(e) {
   e.preventDefault();
+  e.stopPropagation(); // 防止事件冒泡
   joystickActive = true;
 
   const touch = e.touches ? e.touches[0] : e;
-  joystickCenter.x = touch.clientX;
-  joystickCenter.y = touch.clientY;
+
+  // 重新计算摇杆中心位置（因为可能发生了滚动或布局变化）
+  const rect = joystick.base.getBoundingClientRect();
+  joystickCenter.x = rect.left + rect.width / 2;
+  joystickCenter.y = rect.top + rect.height / 2;
 
   updateJoystickPosition(touch.clientX, touch.clientY);
+
+  // 添加视觉反馈
+  joystick.base.style.transform = "scale(1.05)";
+  joystick.knob.style.background = "rgba(255, 255, 255, 1)";
 }
 
 // 摇杆移动
@@ -1091,13 +1193,26 @@ function handleJoystickMove(e) {
 function handleJoystickEnd(e) {
   if (!joystickActive) return;
   e.preventDefault();
+  e.stopPropagation();
 
   joystickActive = false;
   joystickPosition.x = 0;
   joystickPosition.y = 0;
 
-  // 重置摇杆位置
+  // 重置摇杆位置，添加平滑过渡
+  joystick.knob.style.transition = "all 0.2s ease";
   joystick.knob.style.transform = "translate(0, 0)";
+
+  // 恢复视觉状态
+  joystick.base.style.transform = "scale(1)";
+  joystick.knob.style.background = "rgba(255, 255, 255, 0.8)";
+
+  // 延迟移除过渡效果
+  setTimeout(() => {
+    if (joystick && joystick.knob) {
+      joystick.knob.style.transition = "";
+    }
+  }, 200);
 }
 
 // 更新摇杆位置
@@ -1118,6 +1233,10 @@ function updateJoystickPosition(x, y) {
 
   // 更新摇杆视觉位置
   joystick.knob.style.transform = `translate(${joystickPosition.x}px, ${joystickPosition.y}px)`;
+
+  // 根据移动距离调整透明度，提供视觉反馈
+  const intensity = Math.min(distance / joystickRadius, 1);
+  joystick.knob.style.opacity = 0.8 + intensity * 0.2;
 }
 
 // 创建移动端上浮下沉按钮
@@ -1126,64 +1245,77 @@ function createMobileJumpButton() {
   const thrustUpButton = document.createElement("button");
   thrustUpButton.id = "mobile-thrust-up-button";
   thrustUpButton.className = "mobile-thrust-up-button";
-  thrustUpButton.textContent = "上浮";
+  thrustUpButton.innerHTML = "上浮<br>↑";
 
   // 设置上浮按钮位置（右下角）
   thrustUpButton.style.position = "fixed";
-  thrustUpButton.style.right = "20px";
-  thrustUpButton.style.bottom = "20px";
+  thrustUpButton.style.right = "30px";
+  thrustUpButton.style.bottom = "120px";
   thrustUpButton.style.zIndex = "1000";
 
+  // 触摸事件处理，添加视觉反馈
   thrustUpButton.addEventListener("touchstart", (e) => {
     e.preventDefault();
+    e.stopPropagation();
     keys.up = true;
+    thrustUpButton.style.transform = "scale(0.95)";
   });
 
   thrustUpButton.addEventListener("touchend", (e) => {
     e.preventDefault();
+    e.stopPropagation();
     keys.up = false;
+    thrustUpButton.style.transform = "scale(1)";
   });
 
   thrustUpButton.addEventListener("mousedown", (e) => {
     e.preventDefault();
     keys.up = true;
+    thrustUpButton.style.transform = "scale(0.95)";
   });
 
   thrustUpButton.addEventListener("mouseup", (e) => {
     e.preventDefault();
     keys.up = false;
+    thrustUpButton.style.transform = "scale(1)";
   });
 
   // 下沉按钮
   const thrustDownButton = document.createElement("button");
   thrustDownButton.id = "mobile-thrust-down-button";
   thrustDownButton.className = "mobile-thrust-down-button";
-  thrustDownButton.textContent = "下沉";
+  thrustDownButton.innerHTML = "下沉<br>↓";
 
-  // 设置下沉按钮位置（右下角，上浮按钮上方）
+  // 设置下沉按钮位置（右下角，上浮按钮下方）
   thrustDownButton.style.position = "fixed";
-  thrustDownButton.style.right = "20px";
-  thrustDownButton.style.bottom = "100px";
+  thrustDownButton.style.right = "30px";
+  thrustDownButton.style.bottom = "30px";
   thrustDownButton.style.zIndex = "1000";
 
   thrustDownButton.addEventListener("touchstart", (e) => {
     e.preventDefault();
+    e.stopPropagation();
     keys.down = true;
+    thrustDownButton.style.transform = "scale(0.95)";
   });
 
   thrustDownButton.addEventListener("touchend", (e) => {
     e.preventDefault();
+    e.stopPropagation();
     keys.down = false;
+    thrustDownButton.style.transform = "scale(1)";
   });
 
   thrustDownButton.addEventListener("mousedown", (e) => {
     e.preventDefault();
     keys.down = true;
+    thrustDownButton.style.transform = "scale(0.95)";
   });
 
   thrustDownButton.addEventListener("mouseup", (e) => {
     e.preventDefault();
     keys.down = false;
+    thrustDownButton.style.transform = "scale(1)";
   });
 
   document.body.appendChild(thrustUpButton);
@@ -1531,11 +1663,12 @@ function createUI() {
 
   if (isMobile) {
     instructions.innerHTML = `
-      <p>移动端控制：使用左下角摇杆移动宇航员</p>
-      <p>垂直移动：点击右下角上浮/下沉按钮</p>
-      <p>视角切换：点击切换视角按钮</p>
-      <p>聚焦功能：点击聚焦宇航员按钮</p>
-      <p>科普模式：点击行星查看信息，WASD控制相机</p>
+      <p>🎮 摇杆控制：左下角摇杆控制移动（上下左右）</p>
+      <p>🚀 垂直移动：右侧按钮控制上浮/下沉</p>
+      <p>👁️ 视角切换：点击"切换视角"进入第一人称</p>
+      <p>🔄 第一人称：滑动屏幕中央区域旋转视角</p>
+      <p>📍 聚焦定位：点击"聚焦宇航员"快速定位</p>
+      <p>📚 科普模式：点击行星查看天文信息</p>
     `;
 
     // 创建移动端控制元素
@@ -1556,7 +1689,19 @@ function createUI() {
   const firstPersonHint = document.createElement("div");
   firstPersonHint.id = "firstPersonHint";
   firstPersonHint.className = "first-person-hint";
-  firstPersonHint.innerHTML = "点击屏幕激活鼠标控制";
+
+  if (isMobile) {
+    firstPersonHint.innerHTML = `
+      <div style="text-align: center;">
+        <p style="margin: 5px 0;">📱 第一人称模式已启用</p>
+        <p style="margin: 5px 0; font-size: 14px;">滑动屏幕中央旋转视角</p>
+        <p style="margin: 5px 0; font-size: 14px;">摇杆控制移动方向</p>
+      </div>
+    `;
+  } else {
+    firstPersonHint.innerHTML = "点击屏幕激活鼠标控制";
+  }
+
   firstPersonHint.style.display = "none";
 
   // 创建科普模式提示
