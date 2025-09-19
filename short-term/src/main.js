@@ -158,7 +158,7 @@ function loadAstronaut() {
   document.getElementById("app").appendChild(loadingDiv);
 
   loader.load(
-    "./model/astronaut/scene.gltf",
+    "./model/Astronaut/scene.gltf",
     (gltf) => {
       astronaut = gltf.scene;
       astronaut.scale.set(1, 1, 1);
